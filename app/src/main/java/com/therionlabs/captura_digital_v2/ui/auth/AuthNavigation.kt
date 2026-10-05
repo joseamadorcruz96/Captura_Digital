@@ -16,7 +16,6 @@ fun AuthNavigation(onLoginSuccess: () -> Unit) {
             LoginRoute(
                 onLoginSuccess = {
                     onLoginSuccess()
-                    // Temporal: hasta que exista la pantalla de inicio de José
                     navController.navigate("help") {
                         popUpTo("login") { inclusive = true }
                     }
@@ -30,7 +29,13 @@ fun AuthNavigation(onLoginSuccess: () -> Unit) {
         }
 
         composable("help") {
-            HelpScreen()
+            HelpScreen(
+                onBack = {
+                    navController.navigate("login") {
+                        popUpTo("help") { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }

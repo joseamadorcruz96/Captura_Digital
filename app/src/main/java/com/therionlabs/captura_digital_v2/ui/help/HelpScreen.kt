@@ -30,7 +30,7 @@ private val steps = listOf(
 )
 
 @Composable
-fun HelpScreen() {
+fun HelpScreen(onBack: () -> Unit) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -46,6 +46,12 @@ fun HelpScreen() {
                     .statusBarsPadding()
                     .padding(24.dp)
             ) {
+                TextButton(
+                    onClick = onBack,
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    Text("← Volver", color = Color.White)
+                }
                 Text(
                     "¿Cómo funciona?",
                     style = MaterialTheme.typography.headlineMedium,

@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.therionlabs.captura_digital_v2.ui.help.HelpScreen
 
 @Composable
 fun AuthNavigation(onLoginSuccess: () -> Unit) {
@@ -13,15 +14,23 @@ fun AuthNavigation(onLoginSuccess: () -> Unit) {
 
         composable("login") {
             LoginRoute(
-                onLoginSuccess = onLoginSuccess,
+                onLoginSuccess = {
+                    onLoginSuccess()
+                    // Temporal: hasta que exista la pantalla de inicio de José
+                    navController.navigate("help") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                },
                 onForgotPassword = { navController.navigate("recover") }
             )
         }
 
         composable("recover") {
-            RecoverRoute(
-                onBack = { navController.popBackStack() }
-            )
+            RecoverRoute(onBack = { navController.popBackStack() })
+        }
+
+        composable("help") {
+            HelpScreen()
         }
     }
 }

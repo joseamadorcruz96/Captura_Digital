@@ -2,10 +2,20 @@ package com.therionlabs.captura_digital_v2.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+/**
+ * Paleta de Colores Oficial Duoc UC / TherionLabs.
+ * Definición canónica para todo el sistema de diseño.
+ */
+val DuocAzul = Color(0xFF002B5C)
+val DuocAzulMedio = Color(0xFF0A4A8A)
+val DuocAzulOscuro = Color(0xFF001C3D)
+val DuocAmarillo = Color(0xFFFFB81C)
+val DuocAmarilloClaro = Color(0xFFFFF4D6)
+val FondoClaro = Color(0xFFF4F6FA)
+val Blanco = Color(0xFFFFFFFF)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// Colores de soporte / estado
+val GrisBorde = Color(0xFFE2E8F0)
+val GrisTexto = Color(0xFF64748B)
+val ErrorRojo = Color(0xFFDC2626)
+val ExitoVerde = Color(0xFF16A34A)

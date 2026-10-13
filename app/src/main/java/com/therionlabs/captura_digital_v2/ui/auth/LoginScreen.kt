@@ -22,6 +22,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.therionlabs.captura_digital_v2.R
+import com.therionlabs.captura_digital_v2.ui.components.DuocButton
+import com.therionlabs.captura_digital_v2.ui.components.DuocCard
+import com.therionlabs.captura_digital_v2.ui.components.DuocTextField
 
 @Composable
 fun LoginRoute(
@@ -57,12 +60,6 @@ fun LoginScreen(
         0.45f to DuocAzulMedio,
         0.75f to FondoClaro,
         1.0f to FondoClaro
-    )
-
-    val coloresCampo = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = DuocAzul,
-        focusedLabelColor = DuocAzul,
-        cursorColor = DuocAzul
     )
 
     Column(
@@ -105,56 +102,39 @@ fun LoginScreen(
 
         Spacer(Modifier.height(32.dp))
 
-        // Tarjeta del formulario
-        Card(
+        // Tarjeta del formulario usando componentes reutilizables (DRY)
+        DuocCard(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            elevation = 8.dp,
+            contentPadding = 20.dp
         ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                OutlinedTextField(
-                    value = uiState.email,
-                    onValueChange = onEmailChange,
-                    label = { Text("Correo electrónico") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = coloresCampo,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(12.dp))
+            DuocTextField(
+                value = uiState.email,
+                onValueChange = onEmailChange,
+                label = "Correo electrónico",
+                keyboardType = KeyboardType.Email
+            )
+            Spacer(Modifier.height(12.dp))
 
-                OutlinedTextField(
-                    value = uiState.password,
-                    onValueChange = onPasswordChange,
-                    label = { Text("Contraseña") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = coloresCampo,
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    modifier = Modifier.fillMaxWidth()
-                )
+            DuocTextField(
+                value = uiState.password,
+                onValueChange = onPasswordChange,
+                label = "Contraseña",
+                isPassword = true,
+                keyboardType = KeyboardType.Password
+            )
 
-                uiState.error?.let {
-                    Spacer(Modifier.height(8.dp))
-                    Text(it, color = MaterialTheme.colorScheme.error)
-                }
-
-                Spacer(Modifier.height(20.dp))
-                Button(
-                    onClick = onLoginClick,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = DuocAmarillo,
-                        contentColor = DuocAzul
-                    ),
-                    modifier = Modifier.fillMaxWidth().height(52.dp)
-                ) {
-                    Text("Ingresar", fontWeight = FontWeight.Bold)
-                }
+            uiState.error?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(it, color = MaterialTheme.colorScheme.error)
             }
+
+            Spacer(Modifier.height(20.dp))
+            DuocButton(
+                text = "Ingresar",
+                onClick = onLoginClick
+            )
         }
 
         Spacer(Modifier.height(8.dp))

@@ -16,8 +16,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.therionlabs.captura_digital_v2.ui.auth.DuocAmarillo
 import com.therionlabs.captura_digital_v2.ui.auth.DuocAzul
-import com.therionlabs.captura_digital_v2.ui.auth.DuocAzulMedio
 import com.therionlabs.captura_digital_v2.ui.auth.FondoClaro
+import com.therionlabs.captura_digital_v2.ui.components.DuocHeader
 
 private data class HelpStep(val title: String, val text: String)
 
@@ -37,33 +37,13 @@ fun HelpScreen(onBack: () -> Unit) {
             .background(FondoClaro),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Encabezado
+        // Encabezado usando componente reutilizable
         item {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Brush.verticalGradient(listOf(DuocAzul, DuocAzulMedio)))
-                    .statusBarsPadding()
-                    .padding(24.dp)
-            ) {
-                TextButton(
-                    onClick = onBack,
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                    Text("← Volver", color = Color.White)
-                }
-                Text(
-                    "¿Cómo funciona?",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "Sigue estos pasos para registrar una encuesta",
-                    color = DuocAmarillo
-                )
-            }
+            DuocHeader(
+                title = "¿Cómo funciona?",
+                subtitle = "Sigue estos pasos para registrar una encuesta",
+                onBack = onBack
+            )
         }
 
         // Pasos

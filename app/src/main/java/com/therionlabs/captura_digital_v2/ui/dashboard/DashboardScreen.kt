@@ -20,6 +20,7 @@ import com.therionlabs.captura_digital_v2.ui.auth.DuocAmarillo
 import com.therionlabs.captura_digital_v2.ui.auth.DuocAzul
 import com.therionlabs.captura_digital_v2.ui.auth.DuocAzulMedio
 import com.therionlabs.captura_digital_v2.ui.auth.FondoClaro
+import com.therionlabs.captura_digital_v2.ui.components.DuocHeader
 
 @Composable
 fun DashboardRoute(
@@ -41,25 +42,12 @@ fun DashboardScreen(
             .background(FondoClaro)
             .verticalScroll(rememberScrollState())
     ) {
-        // Encabezado
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Brush.verticalGradient(listOf(DuocAzul, DuocAzulMedio)))
-                .statusBarsPadding()
-                .padding(24.dp)
-        ) {
-            TextButton(onClick = onBack, contentPadding = PaddingValues(0.dp)) {
-                Text("← Volver", color = Color.White)
-            }
-            Text(
-                "Dashboard",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-            Text("Perfil de los prospectos encuestados", color = DuocAmarillo)
-        }
+        // Encabezado usando componente reutilizable
+        DuocHeader(
+            title = "Dashboard",
+            subtitle = "Perfil de los prospectos encuestados",
+            onBack = onBack
+        )
 
         Spacer(Modifier.height(16.dp))
 

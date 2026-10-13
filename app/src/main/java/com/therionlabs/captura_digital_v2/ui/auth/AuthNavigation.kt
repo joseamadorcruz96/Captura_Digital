@@ -14,6 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.therionlabs.captura_digital_v2.ui.dashboard.DashboardRoute
 import com.therionlabs.captura_digital_v2.ui.help.HelpScreen
+import com.therionlabs.captura_digital_v2.ui.inicio.InicioRoute
 
 @Composable
 fun AuthNavigation(onLoginSuccess: () -> Unit) {
@@ -37,11 +38,14 @@ fun AuthNavigation(onLoginSuccess: () -> Unit) {
             RecoverRoute(onBack = { navController.popBackStack() })
         }
 
-        // Temporal: hasta que exista la pantalla de inicio de José
+        // Pantalla de Inicio oficial (Fase 3: feature/Inicio)
         composable("menu") {
-            TempMenu(
-                onHelp = { navController.navigate("help") },
+            InicioRoute(
+                onNewCapture = {
+                    // Próxima fase: navegar a la captura del formulario cupón Duoc UC
+                },
                 onDashboard = { navController.navigate("dashboard") },
+                onHelp = { navController.navigate("help") },
                 onLogout = {
                     navController.navigate("login") {
                         popUpTo("menu") { inclusive = true }
@@ -56,52 +60,6 @@ fun AuthNavigation(onLoginSuccess: () -> Unit) {
 
         composable("dashboard") {
             DashboardRoute(onBack = { navController.popBackStack() })
-        }
-    }
-}
-
-@Composable
-private fun TempMenu(
-    onHelp: () -> Unit,
-    onDashboard: () -> Unit,
-    onLogout: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(FondoClaro)
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            "Menú de pruebas",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = DuocAzul
-        )
-        Spacer(Modifier.height(24.dp))
-
-        listOf(
-            "¿Cómo funciona?" to onHelp,
-            "Dashboard" to onDashboard
-        ).forEach { (text, action) ->
-            Button(
-                onClick = action,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = DuocAmarillo,
-                    contentColor = DuocAzul
-                ),
-                modifier = Modifier.fillMaxWidth().height(52.dp)
-            ) {
-                Text(text, fontWeight = FontWeight.Bold)
-            }
-            Spacer(Modifier.height(12.dp))
-        }
-
-        TextButton(onClick = onLogout) {
-            Text("Cerrar sesión", color = DuocAzul)
         }
     }
 }

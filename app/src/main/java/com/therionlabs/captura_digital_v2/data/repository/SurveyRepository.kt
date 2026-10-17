@@ -1,7 +1,5 @@
 package com.therionlabs.captura_digital_v2.data.repository
 
-import com.therionlabs.captura_digital_v2.data.model.Survey
-
 class SurveyRepository {
 
     // Datos de ejemplo: se reemplazarán por las encuestas reales del formulario

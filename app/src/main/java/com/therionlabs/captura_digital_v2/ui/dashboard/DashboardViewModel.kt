@@ -1,14 +1,19 @@
 package com.therionlabs.captura_digital_v2.ui.dashboard
 
 import androidx.lifecycle.ViewModel
-import com.therionlabs.captura_digital_v2.data.repository.SurveyRepository
+import com.therionlabs.captura_digital_v2.data.model.Genero
+import com.therionlabs.captura_digital_v2.data.model.UserRole
+import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
+import com.therionlabs.captura_digital_v2.data.repository.ProspectoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.util.Calendar
 
 class DashboardViewModel : ViewModel() {
 
-    private val repository = SurveyRepository()
+    private val prospectoRepository = ProspectoRepository()
+    private val authRepository = AuthRepository()
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
@@ -18,36 +23,47 @@ class DashboardViewModel : ViewModel() {
     }
 
     private fun load() {
-        val surveys = repository.getAll()
 
-        // Cantidad por género
-        val byGender = surveys.groupingBy { it.gender }.eachCount()
+        val user = authRepository.getCurrentUser()
+        val prospectos = if (user.role == UserRole.ADMINISTRATIVO) {
+            prospectoRepository.getAll()
+        } else {
+            prospectoRepository.getByCaptador(user.id)
+        }
 
-        // Cantidad por rango de edad
+        val ages = prospectos.mapNotNull { calcularEdad(it.fechaNacimiento) }
+
+        val byGender = Genero.entries.associate { genero ->
+            genero.displayName to prospectos.count { it.genero == genero }
+        }
+
         val byAge = linkedMapOf(
-            "Menor de 18" to surveys.count { it.age < 18 },
-            "18 a 24" to surveys.count { it.age in 18..24 },
-            "25 a 34" to surveys.count { it.age in 25..34 },
-            "35 o más" to surveys.count { it.age >= 35 }
+            "Menor de 18" to ages.count { it < 18 },
+            "18 a 24" to ages.count { it in 18..24 },
+            "25 a 34" to ages.count { it in 25..34 },
+            "35 o más" to ages.count { it >= 35 }
         )
 
-        // Cantidad por interés, de mayor a menor
-        val byInterest = surveys
-            .flatMap { it.interests }
+        val byInterest = prospectos
+            .flatMap { listOfNotNull(it.carreraPrioridad1, it.carreraPrioridad2, it.carreraPrioridad3) }
+            .filter { it.isNotBlank() }
             .groupingBy { it }
             .eachCount()
             .toList()
             .sortedByDescending { it.second }
             .toMap()
 
-        val averageAge = if (surveys.isEmpty()) 0 else surveys.map { it.age }.average().toInt()
-
         _uiState.value = DashboardUiState(
-            total = surveys.size,
-            averageAge = averageAge,
+            total = prospectos.size,
+            averageAge = if (ages.isEmpty()) 0 else ages.average().toInt(),
             byGender = byGender,
             byAge = byAge,
             byInterest = byInterest
         )
+    }
+
+    private fun calcularEdad(fecha: String?): Int? {
+        val year = fecha?.substringAfterLast("/")?.toIntOrNull() ?: return null
+        return Calendar.getInstance().get(Calendar.YEAR) - year
     }
 }

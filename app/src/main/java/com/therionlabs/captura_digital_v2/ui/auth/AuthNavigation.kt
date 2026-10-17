@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.therionlabs.captura_digital_v2.ui.dashboard.DashboardRoute
+import com.therionlabs.captura_digital_v2.ui.formulario.FormularioRoute
 import com.therionlabs.captura_digital_v2.ui.help.HelpScreen
 import com.therionlabs.captura_digital_v2.ui.inicio.InicioRoute
 
@@ -38,12 +39,10 @@ fun AuthNavigation(onLoginSuccess: () -> Unit) {
             RecoverRoute(onBack = { navController.popBackStack() })
         }
 
-        // Pantalla de Inicio oficial (Fase 3: feature/Inicio)
+        // Pantalla de Inicio oficial (feature/Inicio)
         composable("menu") {
             InicioRoute(
-                onNewCapture = {
-                    // Próxima fase: navegar a la captura del formulario cupón Duoc UC
-                },
+                onNewCapture = { navController.navigate("formulario") },
                 onDashboard = { navController.navigate("dashboard") },
                 onHelp = { navController.navigate("help") },
                 onLogout = {
@@ -52,6 +51,11 @@ fun AuthNavigation(onLoginSuccess: () -> Unit) {
                     }
                 }
             )
+        }
+
+        // Pantalla de Captura del Cupón Duoc UC (feature/Formulario)
+        composable("formulario") {
+            FormularioRoute(onBack = { navController.popBackStack() })
         }
 
         composable("help") {

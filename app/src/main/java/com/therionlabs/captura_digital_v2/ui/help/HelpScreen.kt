@@ -10,7 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,11 +21,42 @@ import com.therionlabs.captura_digital_v2.ui.components.DuocHeader
 private data class HelpStep(val title: String, val text: String)
 
 private val steps = listOf(
-    HelpStep("Inicia sesión", "Usa el correo y la contraseña que te entregó el administrador."),
-    HelpStep("Abre el formulario", "Desde el menú ☰ elige \"Nueva encuesta\"."),
-    HelpStep("Completa los datos", "Registra la información del prospecto: nombre, edad, género e intereses."),
-    HelpStep("Guarda la encuesta", "Presiona \"Guardar\". Verás una confirmación al terminar."),
-    HelpStep("Revisa tus resultados", "En el dashboard verás cuántas encuestas llevas y el resumen de tus prospectos.")
+    HelpStep(
+        "Inicia una nueva captura",
+        "Desde el inicio, presiona \"Formulario de captura\" para abrir el cupón de admisión."
+    ),
+    HelpStep(
+        "Pide el consentimiento",
+        "Antes de registrar datos, el prospecto debe aceptar el uso de su información personal."
+    ),
+    HelpStep(
+        "Datos personales",
+        "Ingresa RUT, nombres, apellidos, género, fecha de nacimiento, comuna, celular y correo. El RUT se valida automáticamente."
+    ),
+    HelpStep(
+        "Antecedentes escolares",
+        "Indica su situación académica (4° medio, egresado u otra), el establecimiento y su comuna."
+    ),
+    HelpStep(
+        "Preferencias",
+        "Selecciona la jornada (diurna o vespertina) y la sede de interés."
+    ),
+    HelpStep(
+        "Interés y motivación",
+        "Marca el nivel de interés y el perfil que mejor lo representa."
+    ),
+    HelpStep(
+        "Carreras",
+        "Elige hasta 3 carreras en orden de prioridad. La primera es obligatoria."
+    ),
+    HelpStep(
+        "Guarda el cupón",
+        "Presiona guardar. Verás una confirmación con el nombre y RUT del prospecto."
+    ),
+    HelpStep(
+        "Revisa tus resultados",
+        "En el dashboard verás cuántos prospectos llevas y su perfil: género, edad y carreras de interés."
+    )
 )
 
 @Composable
@@ -37,16 +67,14 @@ fun HelpScreen(onBack: () -> Unit) {
             .background(FondoClaro),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Encabezado usando componente reutilizable
         item {
             DuocHeader(
                 title = "¿Cómo funciona?",
-                subtitle = "Sigue estos pasos para registrar una encuesta",
+                subtitle = "Pasos para registrar un cupón de admisión",
                 onBack = onBack
             )
         }
 
-        // Pasos
         itemsIndexed(steps) { index, step ->
             StepCard(number = index + 1, step = step)
         }
@@ -64,7 +92,7 @@ fun HelpScreen(onBack: () -> Unit) {
                     Text("Sin conexión", fontWeight = FontWeight.Bold, color = DuocAzul)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Puedes trabajar sin internet. Las encuestas se guardan en el teléfono y se envían solas cuando vuelvas a tener señal.",
+                        "Puedes registrar cupones sin internet. Quedan guardados en el teléfono como pendientes y se sincronizan cuando vuelvas a tener señal.",
                         color = Color.DarkGray
                     )
                 }

@@ -11,6 +11,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -119,7 +123,9 @@ fun LoginScreen(
                 value = uiState.email,
                 onValueChange = onEmailChange,
                 label = "Correo electrónico",
-                keyboardType = KeyboardType.Email
+                keyboardType = KeyboardType.Email,
+                errorMessage = uiState.emailError,
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) }
             )
             Spacer(Modifier.height(12.dp))
 
@@ -128,12 +134,23 @@ fun LoginScreen(
                 onValueChange = onPasswordChange,
                 label = "Contraseña",
                 isPassword = true,
-                keyboardType = KeyboardType.Password
+                keyboardType = KeyboardType.Password,
+                errorMessage = uiState.passwordError,
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) }
             )
 
             uiState.error?.let {
-                Spacer(Modifier.height(8.dp))
-                Text(it, color = MaterialTheme.colorScheme.error)
+                Spacer(Modifier.height(12.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(it, color = MaterialTheme.colorScheme.error)
+                }
             }
 
             Spacer(Modifier.height(20.dp))

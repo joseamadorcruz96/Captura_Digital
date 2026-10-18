@@ -23,7 +23,6 @@ class DashboardViewModel : ViewModel() {
     }
 
     private fun load() {
-
         val user = authRepository.getCurrentUser()
         val prospectos = if (user.role == UserRole.ADMINISTRATIVO) {
             prospectoRepository.getAll()
@@ -60,6 +59,25 @@ class DashboardViewModel : ViewModel() {
             byAge = byAge,
             byInterest = byInterest
         )
+    }
+
+    fun shareText(): String {
+        val state = _uiState.value
+        return buildString {
+            appendLine("Resumen Captura Digital")
+            appendLine()
+            appendLine("Encuestas: ${state.total}")
+            appendLine("Edad promedio: ${state.averageAge} años")
+            appendLine()
+            appendLine("Género:")
+            state.byGender.forEach { (label, count) -> appendLine("- $label: $count") }
+            appendLine()
+            appendLine("Rango de edad:")
+            state.byAge.forEach { (label, count) -> appendLine("- $label: $count") }
+            appendLine()
+            appendLine("Carreras de interés:")
+            state.byInterest.forEach { (label, count) -> appendLine("- $label: $count") }
+        }
     }
 
     private fun calcularEdad(fecha: String?): Int? {

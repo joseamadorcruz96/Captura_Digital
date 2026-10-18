@@ -1,5 +1,6 @@
 package com.therionlabs.captura_digital_v2.ui.dashboard
 
+import android.content.Intent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -15,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -25,7 +27,6 @@ import com.therionlabs.captura_digital_v2.ui.auth.DuocAzulMedio
 import com.therionlabs.captura_digital_v2.ui.auth.FondoClaro
 import com.therionlabs.captura_digital_v2.ui.components.DuocHeader
 
-// Colores de las porciones del gráfico de torta
 private val pieColors = listOf(
     DuocAzul,
     DuocAmarillo,
@@ -40,15 +41,27 @@ fun DashboardRoute(
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    DashboardScreen(uiState = uiState, onBack = onBack)
+    val context = LocalContext.current
+
+    DashboardScreen(
+        uiState = uiState,
+        onBack = onBack,
+        onShare = {
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, viewModel.shareText())
+            }
+            context.startActivity(Intent.createChooser(intent, "Compartir resumen"))
+        }
+    )
 }
 
 @Composable
 fun DashboardScreen(
     uiState: DashboardUiState,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onShare: () -> Unit
 ) {
-    // Animación: avanza de 0 a 1 al abrir la pantalla
     var started by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { started = true }
     val progress by animateFloatAsState(
@@ -71,7 +84,6 @@ fun DashboardScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // Resumen
         Row(
             modifier = Modifier.padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -82,7 +94,23 @@ fun DashboardScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        // Gráficos
+        Button(
+            onClick = onShare,
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = DuocAmarillo,
+                contentColor = DuocAzul
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .height(48.dp)
+        ) {
+            Text("Compartir resumen", fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(Modifier.height(12.dp))
+
         PieChartCard("Género", uiState.byGender, progress)
         PieChartCard("Rango de edad", uiState.byAge, progress)
         ChartCard("Intereses", uiState.byInterest, uiState.total, DuocAmarillo, progress)
@@ -136,8 +164,6 @@ private fun PieChartCard(title: String, data: Map<String, Int>, progress: Float)
                 Text("Sin datos", color = Color.Gray)
             } else {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-
-                    // Torta animada con el total al centro
                     Box(contentAlignment = Alignment.Center) {
                         Canvas(modifier = Modifier.size(130.dp)) {
                             var startAngle = -90f
@@ -158,7 +184,6 @@ private fun PieChartCard(title: String, data: Map<String, Int>, progress: Float)
 
                     Spacer(Modifier.width(20.dp))
 
-                    // Leyenda
                     Column {
                         data.entries.forEachIndexed { index, entry ->
                             val percent = entry.value * 100 / total
@@ -226,7 +251,6 @@ private fun ChartCard(
                     }
                     Spacer(Modifier.height(4.dp))
 
-                    // Barra animada
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()

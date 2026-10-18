@@ -87,7 +87,6 @@ fun HelpScreen(onBack: () -> Unit) {
             }
         }
 
-        // Consejo sin conexión
         item {
             AnimatedItem(index = steps.size) {
                 Card(
@@ -112,7 +111,6 @@ fun HelpScreen(onBack: () -> Unit) {
     }
 }
 
-// Aparece deslizándose hacia arriba, con un pequeño retraso según su posición
 @Composable
 private fun AnimatedItem(index: Int, content: @Composable () -> Unit) {
     val state = remember { MutableTransitionState(false).apply { targetState = true } }

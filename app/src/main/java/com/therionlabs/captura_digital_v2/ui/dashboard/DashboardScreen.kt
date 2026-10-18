@@ -1,5 +1,7 @@
 package com.therionlabs.captura_digital_v2.ui.dashboard
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -8,8 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,6 +25,7 @@ import com.therionlabs.captura_digital_v2.ui.auth.DuocAzulMedio
 import com.therionlabs.captura_digital_v2.ui.auth.FondoClaro
 import com.therionlabs.captura_digital_v2.ui.components.DuocHeader
 
+// Colores de las porciones del gráfico de torta
 private val pieColors = listOf(
     DuocAzul,
     DuocAmarillo,
@@ -46,6 +48,15 @@ fun DashboardScreen(
     uiState: DashboardUiState,
     onBack: () -> Unit
 ) {
+    // Animación: avanza de 0 a 1 al abrir la pantalla
+    var started by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { started = true }
+    val progress by animateFloatAsState(
+        targetValue = if (started) 1f else 0f,
+        animationSpec = tween(durationMillis = 1000),
+        label = "dashboard"
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -60,6 +71,7 @@ fun DashboardScreen(
 
         Spacer(Modifier.height(16.dp))
 
+        // Resumen
         Row(
             modifier = Modifier.padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -70,9 +82,10 @@ fun DashboardScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        PieChartCard("Género", uiState.byGender)
-        PieChartCard("Rango de edad", uiState.byAge)
-        ChartCard("Intereses", uiState.byInterest, uiState.total, DuocAmarillo)
+        // Gráficos
+        PieChartCard("Género", uiState.byGender, progress)
+        PieChartCard("Rango de edad", uiState.byAge, progress)
+        ChartCard("Intereses", uiState.byInterest, uiState.total, DuocAmarillo, progress)
 
         Spacer(Modifier.height(24.dp))
     }
@@ -99,7 +112,7 @@ private fun SummaryCard(title: String, value: String, modifier: Modifier = Modif
 }
 
 @Composable
-private fun PieChartCard(title: String, data: Map<String, Int>) {
+private fun PieChartCard(title: String, data: Map<String, Int>, progress: Float) {
     val total = data.values.sum()
 
     Card(
@@ -124,11 +137,12 @@ private fun PieChartCard(title: String, data: Map<String, Int>) {
             } else {
                 Row(verticalAlignment = Alignment.CenterVertically) {
 
+                    // Torta animada con el total al centro
                     Box(contentAlignment = Alignment.Center) {
                         Canvas(modifier = Modifier.size(130.dp)) {
                             var startAngle = -90f
                             data.values.forEachIndexed { index, count ->
-                                val sweep = 360f * count / total
+                                val sweep = 360f * count / total * progress
                                 drawArc(
                                     color = pieColors[index % pieColors.size],
                                     startAngle = startAngle,
@@ -144,6 +158,7 @@ private fun PieChartCard(title: String, data: Map<String, Int>) {
 
                     Spacer(Modifier.width(20.dp))
 
+                    // Leyenda
                     Column {
                         data.entries.forEachIndexed { index, entry ->
                             val percent = entry.value * 100 / total
@@ -175,7 +190,8 @@ private fun ChartCard(
     title: String,
     data: Map<String, Int>,
     total: Int,
-    barColor: Color
+    barColor: Color,
+    progress: Float
 ) {
     val max = data.values.maxOrNull() ?: 0
 
@@ -210,6 +226,7 @@ private fun ChartCard(
                     }
                     Spacer(Modifier.height(4.dp))
 
+                    // Barra animada
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -219,7 +236,7 @@ private fun ChartCard(
                     ) {
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth(fraction)
+                                .fillMaxWidth(fraction * progress)
                                 .fillMaxHeight()
                                 .clip(RoundedCornerShape(5.dp))
                                 .background(barColor)

@@ -1,5 +1,10 @@
 package com.therionlabs.captura_digital_v2.ui.help
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -76,29 +82,50 @@ fun HelpScreen(onBack: () -> Unit) {
         }
 
         itemsIndexed(steps) { index, step ->
-            StepCard(number = index + 1, step = step)
+            AnimatedItem(index = index) {
+                StepCard(number = index + 1, step = step)
+            }
         }
 
         // Consejo sin conexión
         item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF4D6))
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Sin conexión", fontWeight = FontWeight.Bold, color = DuocAzul)
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "Puedes registrar cupones sin internet. Quedan guardados en el teléfono como pendientes y se sincronizan cuando vuelvas a tener señal.",
-                        color = Color.DarkGray
-                    )
+            AnimatedItem(index = steps.size) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF4D6))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Sin conexión", fontWeight = FontWeight.Bold, color = DuocAzul)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Puedes registrar cupones sin internet. Quedan guardados en el teléfono como pendientes y se sincronizan cuando vuelvas a tener señal.",
+                            color = Color.DarkGray
+                        )
+                    }
                 }
             }
             Spacer(Modifier.height(24.dp))
         }
+    }
+}
+
+// Aparece deslizándose hacia arriba, con un pequeño retraso según su posición
+@Composable
+private fun AnimatedItem(index: Int, content: @Composable () -> Unit) {
+    val state = remember { MutableTransitionState(false).apply { targetState = true } }
+
+    AnimatedVisibility(
+        visibleState = state,
+        enter = fadeIn(tween(durationMillis = 400, delayMillis = index * 80)) +
+                slideInVertically(
+                    animationSpec = tween(durationMillis = 400, delayMillis = index * 80),
+                    initialOffsetY = { it / 2 }
+                )
+    ) {
+        content()
     }
 }
 

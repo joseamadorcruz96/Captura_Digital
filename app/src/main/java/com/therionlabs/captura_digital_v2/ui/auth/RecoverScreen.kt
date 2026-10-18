@@ -22,6 +22,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.therionlabs.captura_digital_v2.R
+import com.therionlabs.captura_digital_v2.ui.components.DuocButton
+import com.therionlabs.captura_digital_v2.ui.components.DuocCard
+import com.therionlabs.captura_digital_v2.ui.components.DuocTextField
 
 @Composable
 fun RecoverRoute(
@@ -86,14 +89,13 @@ fun RecoverScreen(
 
         Spacer(Modifier.height(32.dp))
 
-        Card(
+        DuocCard(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            elevation = 8.dp,
+            contentPadding = 20.dp
         ) {
             Column(
-                modifier = Modifier.padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (uiState.sent) {
@@ -119,39 +121,20 @@ fun RecoverScreen(
                     )
                     Spacer(Modifier.height(16.dp))
 
-                    OutlinedTextField(
+                    DuocTextField(
                         value = uiState.email,
                         onValueChange = onEmailChange,
-                        label = { Text("Correo electrónico") },
-                        singleLine = true,
+                        label = "Correo electrónico",
                         isError = uiState.error != null,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = DuocAzul,
-                            focusedLabelColor = DuocAzul,
-                            cursorColor = DuocAzul
-                        ),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        modifier = Modifier.fillMaxWidth()
+                        errorMessage = uiState.error,
+                        keyboardType = KeyboardType.Email
                     )
 
-                    uiState.error?.let {
-                        Spacer(Modifier.height(8.dp))
-                        Text(it, color = MaterialTheme.colorScheme.error)
-                    }
-
                     Spacer(Modifier.height(20.dp))
-                    Button(
-                        onClick = onSendClick,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = DuocAmarillo,
-                            contentColor = DuocAzul
-                        ),
-                        modifier = Modifier.fillMaxWidth().height(52.dp)
-                    ) {
-                        Text("Enviar instrucciones", fontWeight = FontWeight.Bold)
-                    }
+                    DuocButton(
+                        text = "Enviar instrucciones",
+                        onClick = onSendClick
+                    )
                 }
             }
         }

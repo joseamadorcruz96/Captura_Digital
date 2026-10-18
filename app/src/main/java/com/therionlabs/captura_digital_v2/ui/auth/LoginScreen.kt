@@ -1,27 +1,37 @@
 package com.therionlabs.captura_digital_v2.ui.auth
 
+import android.content.Context
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.therionlabs.captura_digital_v2.R
+import com.therionlabs.captura_digital_v2.ui.components.DuocButton
+import com.therionlabs.captura_digital_v2.ui.components.DuocCard
+import com.therionlabs.captura_digital_v2.ui.components.DuocTextField
 
 @Composable
 fun LoginRoute(
@@ -30,9 +40,14 @@ fun LoginRoute(
     onForgotPassword: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     LaunchedEffect(uiState.user) {
         if (uiState.user != null) onLoginSuccess()
+    }
+
+    LaunchedEffect(uiState.error) {
+        if (uiState.error != null) vibrar(context)
     }
 
     LoginScreen(
@@ -59,12 +74,6 @@ fun LoginScreen(
         1.0f to FondoClaro
     )
 
-    val coloresCampo = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = DuocAzul,
-        focusedLabelColor = DuocAzul,
-        cursorColor = DuocAzul
-    )
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -76,7 +85,6 @@ fun LoginScreen(
     ) {
         Spacer(Modifier.height(48.dp))
 
-        // Logo
         Surface(
             modifier = Modifier.size(110.dp),
             shape = CircleShape,
@@ -105,56 +113,51 @@ fun LoginScreen(
 
         Spacer(Modifier.height(32.dp))
 
-        // Tarjeta del formulario
-        Card(
+        DuocCard(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            elevation = 8.dp,
+            contentPadding = 20.dp
         ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                OutlinedTextField(
-                    value = uiState.email,
-                    onValueChange = onEmailChange,
-                    label = { Text("Correo electrónico") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = coloresCampo,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    modifier = Modifier.fillMaxWidth()
-                )
+            DuocTextField(
+                value = uiState.email,
+                onValueChange = onEmailChange,
+                label = "Correo electrónico",
+                keyboardType = KeyboardType.Email,
+                errorMessage = uiState.emailError,
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) }
+            )
+            Spacer(Modifier.height(12.dp))
+
+            DuocTextField(
+                value = uiState.password,
+                onValueChange = onPasswordChange,
+                label = "Contraseña",
+                isPassword = true,
+                keyboardType = KeyboardType.Password,
+                errorMessage = uiState.passwordError,
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) }
+            )
+
+            uiState.error?.let {
                 Spacer(Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = uiState.password,
-                    onValueChange = onPasswordChange,
-                    label = { Text("Contraseña") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = coloresCampo,
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                uiState.error?.let {
-                    Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
                     Text(it, color = MaterialTheme.colorScheme.error)
                 }
-
-                Spacer(Modifier.height(20.dp))
-                Button(
-                    onClick = onLoginClick,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = DuocAmarillo,
-                        contentColor = DuocAzul
-                    ),
-                    modifier = Modifier.fillMaxWidth().height(52.dp)
-                ) {
-                    Text("Ingresar", fontWeight = FontWeight.Bold)
-                }
             }
+
+            Spacer(Modifier.height(20.dp))
+            DuocButton(
+                text = "Ingresar",
+                onClick = onLoginClick
+            )
         }
 
         Spacer(Modifier.height(8.dp))
@@ -172,5 +175,15 @@ fun LoginScreen(
             style = MaterialTheme.typography.bodySmall,
             color = Color.Gray
         )
+    }
+}
+
+private fun vibrar(context: Context) {
+    val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE))
+    } else {
+        @Suppress("DEPRECATION")
+        vibrator.vibrate(300)
     }
 }

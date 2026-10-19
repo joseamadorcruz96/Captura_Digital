@@ -1,5 +1,7 @@
 package com.therionlabs.captura_digital_v2.ui.components
 
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +14,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,7 +25,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.therionlabs.captura_digital_v2.ui.theme.Captura_Digital_v2Theme
 import com.therionlabs.captura_digital_v2.ui.theme.DuocAzul
 import com.therionlabs.captura_digital_v2.ui.theme.ErrorRojo
 
@@ -103,6 +108,91 @@ fun DuocTextField(
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(start = 8.dp)
             )
+        }
+    }
+}
+
+@Preview(name = "DuocTextField - Estados", showBackground = true)
+@Composable
+fun DuocTextFieldPreview() {
+    Captura_Digital_v2Theme {
+        Surface {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // Estado vacío con placeholder
+                DuocTextField(
+                    value = "",
+                    onValueChange = {},
+                    label = "Nombre completo",
+                    placeholder = "Ej: Constanza Silva"
+                )
+
+                // Con texto y leadingIcon
+                DuocTextField(
+                    value = "19.876.543-2",
+                    onValueChange = {},
+                    label = "RUT",
+                    leadingIcon = { Text("🪪") }
+                )
+
+                // Campo de contraseña
+                DuocTextField(
+                    value = "MiClaveSegura2026",
+                    onValueChange = {},
+                    label = "Contraseña",
+                    isPassword = true
+                )
+
+                // Estado de error con mensaje explicativo
+                DuocTextField(
+                    value = "correo_invalido",
+                    onValueChange = {},
+                    label = "Correo Institucional",
+                    isError = true,
+                    errorMessage = "Ingresa un correo con dominio @duocuc.cl"
+                )
+
+                // Estado deshabilitado
+                DuocTextField(
+                    value = "SAN-JOAQUIN-01",
+                    onValueChange = {},
+                    label = "Código de Sede",
+                    enabled = false
+                )
+            }
+        }
+    }
+}
+
+@Preview(name = "DuocTextField - Modo Oscuro", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun DuocTextFieldDarkPreview() {
+    Captura_Digital_v2Theme {
+        Surface {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                DuocTextField(
+                    value = "Juan Pérez",
+                    onValueChange = {},
+                    label = "Nombre de Usuario"
+                )
+                DuocTextField(
+                    value = "",
+                    onValueChange = {},
+                    label = "Contraseña",
+                    isPassword = true,
+                    isError = true,
+                    errorMessage = "La contraseña es requerida"
+                )
+            }
         }
     }
 }

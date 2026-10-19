@@ -1,9 +1,13 @@
 package com.therionlabs.captura_digital_v2.ui.components
 
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,13 +15,16 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.therionlabs.captura_digital_v2.ui.theme.Captura_Digital_v2Theme
 import com.therionlabs.captura_digital_v2.ui.theme.DuocAmarillo
 import com.therionlabs.captura_digital_v2.ui.theme.DuocAzul
 
@@ -96,5 +103,73 @@ fun DuocOutlinedButton(
             text = text,
             fontWeight = FontWeight.SemiBold
         )
+    }
+}
+
+@Preview(name = "DuocButtons - Claro", showBackground = true)
+@Composable
+fun DuocButtonsPreview() {
+    Captura_Digital_v2Theme {
+        Surface {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                DuocButton(
+                    text = "Iniciar Sesión",
+                    onClick = {}
+                )
+                DuocButton(
+                    text = "Con Icono",
+                    onClick = {},
+                    leadingIcon = { Text("🚀") }
+                )
+                DuocButton(
+                    text = "Guardando Datos",
+                    onClick = {},
+                    isLoading = true
+                )
+                DuocButton(
+                    text = "Botón Deshabilitado",
+                    onClick = {},
+                    enabled = false
+                )
+                DuocOutlinedButton(
+                    text = "Cancelar / Volver",
+                    onClick = {}
+                )
+                DuocOutlinedButton(
+                    text = "Acción Deshabilitada",
+                    onClick = {},
+                    enabled = false
+                )
+            }
+        }
+    }
+}
+
+@Preview(name = "DuocButtons - Oscuro", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun DuocButtonsDarkPreview() {
+    Captura_Digital_v2Theme {
+        Surface {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                DuocButton(
+                    text = "Botón Principal (Oscuro)",
+                    onClick = {}
+                )
+                DuocOutlinedButton(
+                    text = "Botón Secundario (Oscuro)",
+                    onClick = {}
+                )
+            }
+        }
     }
 }

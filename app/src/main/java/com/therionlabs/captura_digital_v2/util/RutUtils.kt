@@ -7,7 +7,8 @@ package com.therionlabs.captura_digital_v2.util
 object RutUtils {
 
     /**
-     * Limpia un RUT eliminando puntos, guiones y espacios en blanco.
+     * Limpia un RUT eliminando puntos, guiones y espacios en blanco,
+     * convirtiendo la letra 'k' a mayúscula.
      */
     fun cleanRut(rut: String): String {
         return rut.replace(".", "")
@@ -18,6 +19,7 @@ object RutUtils {
 
     /**
      * Valida si un RUT chileno es válido según el algoritmo Módulo 11.
+     * Soporta formatos con o sin puntos y guión (8 a 9 caracteres limpios).
      */
     fun isValidRut(rut: String): Boolean {
         val cleaned = cleanRut(rut)
@@ -32,7 +34,7 @@ object RutUtils {
     }
 
     /**
-     * Calcula el dígito verificador para el cuerpo de un RUT dado.
+     * Calcula el dígito verificador para el cuerpo de un RUT dado usando Módulo 11.
      */
     fun calculateDv(cuerpo: String): Char {
         var sum = 0
@@ -52,15 +54,17 @@ object RutUtils {
     }
 
     /**
-     * Formatea un texto a formato de RUT chileno: XX.XXX.XXX-X
+     * Formatea un texto a formato estándar de RUT chileno: XX.XXX.XXX-X o X.XXX.XXX-X.
+     * Si el texto tiene menos de 8 caracteres limpios, se devuelve limpio sin agregar
+     * caracteres prematuramente.
      */
     fun formatRut(input: String): String {
         val cleaned = cleanRut(input)
-        if (cleaned.isEmpty()) return ""
-        if (cleaned.length == 1) return cleaned
+        if (cleaned.length < 8) return cleaned
 
-        val cuerpo = cleaned.substring(0, cleaned.length - 1)
-        val dv = cleaned.last()
+        val takeClean = cleaned.take(9)
+        val cuerpo = takeClean.substring(0, takeClean.length - 1)
+        val dv = takeClean.last()
 
         val sb = StringBuilder()
         var count = 0

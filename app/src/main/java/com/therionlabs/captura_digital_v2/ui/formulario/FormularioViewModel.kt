@@ -29,13 +29,42 @@ class FormularioViewModel : ViewModel() {
     }
 
     fun onRutChange(value: String) {
-        // Filtrar caracteres válidos para un RUT (dígitos, k, K, puntos, guion)
-        val filtered = value.filter { it.isDigit() || it == 'k' || it == 'K' || it == '.' || it == '-' }
-        val formatted = RutUtils.formatRut(filtered)
-        val cleaned = RutUtils.cleanRut(filtered)
+        // Permitir borrado fluido: si el usuario borró el DV después de estar formateado, limpiamos el guión
+        if (value.endsWith("-")) {
+            val raw = RutUtils.cleanRut(value)
+            _uiState.value = _uiState.value.copy(
+                rut = raw,
+                rutError = null
+            )
+            return
+        }
+
+        // Limpiar puntos, guiones y espacios existentes
+        val cleaned = RutUtils.cleanRut(value)
+
+        // Filtrar exclusivamente dígitos y permitir 'K' únicamente como DV al final
+        val validChars = StringBuilder()
+        for (i in cleaned.indices) {
+            val char = cleaned[i]
+            if (char.isDigit()) {
+                validChars.append(char)
+            } else if (char == 'K' && i == cleaned.length - 1 && validChars.length >= 7) {
+                validChars.append('K')
+            }
+        }
+
+        val limited = validChars.toString().take(9)
+
+        // Formatear automáticamente cuando está completo (9 dígitos o 8 dígitos válidos/con K)
+        val formatted = when {
+            limited.length == 9 -> RutUtils.formatRut(limited)
+            limited.length == 8 && (RutUtils.isValidRut(limited) || limited.endsWith("K")) -> RutUtils.formatRut(limited)
+            else -> limited
+        }
 
         val error = when {
-            cleaned.length >= 8 && !RutUtils.isValidRut(cleaned) -> "RUT inválido (revise dígito verificador)"
+            limited.length == 9 && !RutUtils.isValidRut(limited) -> "RUT inválido (revise dígito verificador)"
+            limited.length == 8 && limited.endsWith("K") && !RutUtils.isValidRut(limited) -> "RUT inválido (revise dígito verificador)"
             else -> null
         }
 
@@ -215,7 +244,7 @@ class FormularioViewModel : ViewModel() {
             captadorId = captadorId,
             eventoId = eventoId,
             consentimientoDatos = true,
-            rut = state.rut,
+            rut = RutUtils.formatRut(state.rut),
             nombres = state.nombres.trim(),
             apellidos = state.apellidos.trim(),
             genero = state.genero,

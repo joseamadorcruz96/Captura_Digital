@@ -1,5 +1,6 @@
 package com.therionlabs.captura_digital_v2.ui.components
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -19,7 +21,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.therionlabs.captura_digital_v2.ui.theme.Captura_Digital_v2Theme
 import com.therionlabs.captura_digital_v2.ui.theme.DuocAmarillo
 import com.therionlabs.captura_digital_v2.ui.theme.DuocAzul
 import com.therionlabs.captura_digital_v2.ui.theme.DuocAzulMedio
@@ -81,5 +85,55 @@ fun DuocHeader(
                 color = DuocAmarillo
             )
         }
+    }
+}
+
+@Preview(name = "DuocHeader - Variantes", showBackground = true)
+@Composable
+fun DuocHeaderPreview() {
+    Captura_Digital_v2Theme {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Variante completa con volver, título, subtítulo y trailingAction
+            DuocHeader(
+                title = "Admisión 2026",
+                subtitle = "Registro oficial de prospectos",
+                onBack = {},
+                trailingAction = {
+                    Text(
+                        text = "● En línea",
+                        color = DuocAmarillo,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            )
+
+            // Variante con botón volver y título simple
+            DuocHeader(
+                title = "Detalle del Prospecto",
+                onBack = {}
+            )
+
+            // Variante para pantalla principal (sin botón de volver)
+            DuocHeader(
+                title = "Bienvenido, Juan",
+                subtitle = "Sede San Joaquín • Captador"
+            )
+        }
+    }
+}
+
+@Preview(name = "DuocHeader - Modo Oscuro", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun DuocHeaderDarkPreview() {
+    Captura_Digital_v2Theme {
+        DuocHeader(
+            title = "Formulario de Admisión",
+            subtitle = "Duoc UC - Modo Nocturno",
+            onBack = {}
+        )
     }
 }

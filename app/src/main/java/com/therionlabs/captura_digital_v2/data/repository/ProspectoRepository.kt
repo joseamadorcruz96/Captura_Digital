@@ -1,5 +1,9 @@
 package com.therionlabs.captura_digital_v2.data.repository
 
+import com.therionlabs.captura_digital_v2.CapturaDigitalApp
+import com.therionlabs.captura_digital_v2.data.local.dao.ProspectoDao
+import com.therionlabs.captura_digital_v2.data.local.mapper.toDomainList
+import com.therionlabs.captura_digital_v2.data.local.mapper.toEntity
 import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
@@ -7,9 +11,13 @@ import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
 import com.therionlabs.captura_digital_v2.data.model.Prospecto
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 interface IProspectoRepository {
     fun guardarProspecto(prospecto: Prospecto): Boolean
@@ -18,11 +26,29 @@ interface IProspectoRepository {
     fun getPendingSyncCount(): Int
 }
 
-class ProspectoRepository : IProspectoRepository {
+/**
+ * Repositorio de Prospectos conectado a SQLite vía Room.
+ * Implementa el patrón Offline-First manteniendo retrocompatibilidad total
+ * con las vistas de Inicio, Formulario y Dashboard.
+ */
+class ProspectoRepository(
+    private val dao: ProspectoDao? = resolveDao(),
+    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+) : IProspectoRepository {
 
     companion object {
-        // Datos en memoria compartidos durante la ejecución de la app (previo a Room)
-        private val prospectosList = mutableListOf(
+        private fun resolveDao(): ProspectoDao? {
+            return try {
+                if (CapturaDigitalApp.isDatabaseInitialized()) {
+                    CapturaDigitalApp.database.prospectoDao()
+                } else null
+            } catch (_: Exception) {
+                null
+            }
+        }
+
+        // Datos en memoria compartidos como respaldo en caso de tests unitarios puros sin Room
+        private val fallbackMemoryList = mutableListOf(
             Prospecto(
                 id = "demo-uuid-1",
                 captadorId = 2,
@@ -74,26 +100,78 @@ class ProspectoRepository : IProspectoRepository {
         )
     }
 
-    private val _prospectosFlow = MutableStateFlow<List<Prospecto>>(prospectosList)
+    private val _prospectosFlow = MutableStateFlow<List<Prospecto>>(fallbackMemoryList)
     val prospectosFlow: StateFlow<List<Prospecto>> = _prospectosFlow.asStateFlow()
 
-    override fun guardarProspecto(prospecto: Prospecto): Boolean {
-        // Evitar duplicados por RUT si ya existe (upsert / actualización)
-        val index = prospectosList.indexOfFirst { it.rut == prospecto.rut }
-        if (index != -1) {
-            prospectosList[index] = prospecto
-        } else {
-            prospectosList.add(0, prospecto)
+    init {
+        if (dao != null) {
+            coroutineScope.launch {
+                dao.getAllFlow().collect { entities ->
+                    if (entities.isNotEmpty()) {
+                        _prospectosFlow.value = entities.toDomainList()
+                    }
+                }
+            }
         }
-        _prospectosFlow.value = prospectosList.toList()
+    }
+
+    override fun guardarProspecto(prospecto: Prospecto): Boolean {
+        // Actualización optimista inmediata en StateFlow para reactividad de UI
+        val current = _prospectosFlow.value.toMutableList()
+        val index = current.indexOfFirst { it.rut == prospecto.rut }
+        if (index != -1) {
+            current[index] = prospecto
+        } else {
+            current.add(0, prospecto)
+        }
+        _prospectosFlow.value = current
+
+        // Persistencia asíncrona en base de datos Room SQLite
+        if (dao != null) {
+            coroutineScope.launch {
+                dao.insertOrUpdate(prospecto.toEntity())
+            }
+        } else {
+            val fallbackIndex = fallbackMemoryList.indexOfFirst { it.rut == prospecto.rut }
+            if (fallbackIndex != -1) {
+                fallbackMemoryList[fallbackIndex] = prospecto
+            } else {
+                fallbackMemoryList.add(0, prospecto)
+            }
+        }
         return true
     }
 
-    override fun getAll(): List<Prospecto> = prospectosList.toList()
+    override fun getAll(): List<Prospecto> {
+        return if (dao != null) {
+            val cached = _prospectosFlow.value
+            if (cached.isNotEmpty() && cached !== fallbackMemoryList) {
+                cached
+            } else {
+                try {
+                    val list = runBlocking(Dispatchers.IO) { dao.getAllList().toDomainList() }
+                    if (list.isNotEmpty()) {
+                        _prospectosFlow.value = list
+                        list
+                    } else cached
+                } catch (_: Exception) {
+                    cached
+                }
+            }
+        } else {
+            _prospectosFlow.value
+        }
+    }
 
     override fun getByCaptador(captadorId: Int): List<Prospecto> =
-        prospectosList.filter { it.captadorId == captadorId }
+        getAll().filter { it.captadorId == captadorId }
 
     override fun getPendingSyncCount(): Int =
-        prospectosList.count { it.syncStatus == SyncStatus.PENDING_SYNC }
+        getAll().count { it.syncStatus == SyncStatus.PENDING_SYNC }
+
+    suspend fun guardarProspectoSuspend(prospecto: Prospecto): Boolean {
+        guardarProspecto(prospecto)
+        dao?.insertOrUpdate(prospecto.toEntity())
+        return true
+    }
 }

@@ -15,4 +15,7 @@
 local.properties
 .idea/
 /Documentacion
+/docs
+docs/
+guia_estudio/
 .kotlin

@@ -4,6 +4,7 @@ import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
 import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
+import com.therionlabs.captura_digital_v2.data.model.PrevisionSalud
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 
 data class FormularioUiState(
@@ -26,6 +27,8 @@ data class FormularioUiState(
     val celularError: String? = null,
     val email: String = "",
     val emailError: String? = null,
+    val presivionSalud: PrevisionSalud = PrevisionSalud.NO_TIENE,
+    val previsionSaludError : String? = null,
 
     // Antecedentes Escolares
     val situacionAcademica: SituacionAcademica = SituacionAcademica.CUARTO_MEDIO,

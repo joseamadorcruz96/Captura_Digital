@@ -24,6 +24,7 @@ data class Prospecto(
     val comunaResidencia: String,
     val celular: String,
     val email: String,
+    val previsionSalud: PrevisionSalud = PrevisionSalud.NO_TIENE,
 
     // Antecedentes Escolares - verificado 13-10-2026
     val situacionAcademica: SituacionAcademica,

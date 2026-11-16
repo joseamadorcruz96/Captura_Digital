@@ -7,6 +7,7 @@ import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
 import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
+import com.therionlabs.captura_digital_v2.data.model.PrevisionSalud
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
 
@@ -42,6 +43,7 @@ data class ProspectoEntity(
     val comunaResidencia: String,
     val celular: String,
     val email: String,
+    val previsionSalud : PrevisionSalud = PrevisionSalud.NO_TIENE,
 
     // Antecedentes Escolares
     val situacionAcademica: SituacionAcademica,

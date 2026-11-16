@@ -13,6 +13,7 @@ import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
 import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
+import com.therionlabs.captura_digital_v2.data.model.PrevisionSalud
 import com.therionlabs.captura_digital_v2.data.model.Prospecto
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
@@ -27,7 +28,7 @@ import kotlinx.coroutines.launch
  */
 @Database(
     entities = [ProspectoEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -79,6 +80,7 @@ abstract class AppDatabase : RoomDatabase() {
                     comunaResidencia = "Viña del Mar",
                     celular = "+56987654321",
                     email = "camila.valenzuela@gmail.com",
+                    previsionSalud = PrevisionSalud.NO_TIENE,
                     consentimientoDatos = true,
                     situacionAcademica = SituacionAcademica.CUARTO_MEDIO,
                     establecimientoEducacional = "Colegio Rubén Castro",
@@ -103,6 +105,7 @@ abstract class AppDatabase : RoomDatabase() {
                     comunaResidencia = "Valparaíso",
                     celular = "+56912345678",
                     email = "lucas.gonzalez@gmail.com",
+                    previsionSalud = PrevisionSalud.FONASA,
                     consentimientoDatos = true,
                     situacionAcademica = SituacionAcademica.EGRESADO_EM,
                     establecimientoEducacional = "Liceo Eduardo de la Barra",

@@ -4,6 +4,7 @@ import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
 import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
+import com.therionlabs.captura_digital_v2.data.model.PrevisionSalud
 import com.therionlabs.captura_digital_v2.data.model.Prospecto
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
@@ -31,6 +32,7 @@ data class ProspectoRequestDto(
     val comunaResidencia: String,
     val celular: String,
     val email: String,
+    val previsionSalud: String,
     val consentimientoDatos: Boolean,
     val situacionAcademica: String,
     val situacionAcademicaOtro: String?,
@@ -77,6 +79,7 @@ fun Prospecto.toDto(): ProspectoRequestDto {
         comunaResidencia = comunaResidencia,
         celular = celular,
         email = email,
+        previsionSalud = previsionSalud.name,
         consentimientoDatos = consentimientoDatos,
         situacionAcademica = situacionAcademica.name,
         situacionAcademicaOtro = situacionAcademicaOtro,
@@ -110,6 +113,8 @@ fun ProspectoRequestDto.toDomain(syncStatus: SyncStatus = SyncStatus.SYNCED): Pr
         comunaResidencia = comunaResidencia,
         celular = celular,
         email = email,
+        previsionSalud = runCatching { PrevisionSalud.valueOf(previsionSalud) }.getOrDefault(
+            PrevisionSalud.NO_TIENE),
         situacionAcademica = runCatching { SituacionAcademica.valueOf(situacionAcademica) }
             .getOrDefault(SituacionAcademica.CUARTO_MEDIO),
         situacionAcademicaOtro = situacionAcademicaOtro,

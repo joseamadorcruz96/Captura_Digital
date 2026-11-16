@@ -24,6 +24,7 @@ import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
 import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
+import com.therionlabs.captura_digital_v2.data.model.PrevisionSalud
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 import com.therionlabs.captura_digital_v2.ui.components.DuocButton
 import com.therionlabs.captura_digital_v2.ui.components.DuocCard
@@ -56,6 +57,7 @@ fun FormularioRoute(
         onComunaResidenciaChange = viewModel::onComunaResidenciaChange,
         onCelularChange = viewModel::onCelularChange,
         onEmailChange = viewModel::onEmailChange,
+        onPrevisionSaludChange = viewModel::onPrevisionSaludChange,
         onSituacionAcademicaChange = viewModel::onSituacionAcademicaChange,
         onSituacionAcademicaOtroChange = viewModel::onSituacionAcademicaOtroChange,
         onEstablecimientoChange = viewModel::onEstablecimientoChange,
@@ -87,6 +89,7 @@ fun FormularioScreen(
     onComunaResidenciaChange: (String) -> Unit,
     onCelularChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
+    onPrevisionSaludChange: (PrevisionSalud) -> Unit,
     onSituacionAcademicaChange: (SituacionAcademica) -> Unit,
     onSituacionAcademicaOtroChange: (String) -> Unit,
     onEstablecimientoChange: (String) -> Unit,
@@ -200,7 +203,12 @@ fun FormularioScreen(
                 Spacer(Modifier.height(12.dp))
 
                 // Selector de Género
-                Text("Género", style = MaterialTheme.typography.labelMedium, color = DuocAzul, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Género",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = DuocAzul,
+                    fontWeight = FontWeight.SemiBold
+                )
                 Spacer(Modifier.height(4.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -259,6 +267,33 @@ fun FormularioScreen(
                     isError = uiState.emailError != null,
                     errorMessage = uiState.emailError
                 )
+                Spacer(Modifier.height(10.dp))
+
+                // Selector de Prevision
+                Text(
+                    "Prevision",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = DuocAzul,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    PrevisionSalud.values().forEach { pre ->
+                        FilterChip(
+                            selected = uiState.presivionSalud == pre,
+                            onClick = { onPrevisionSaludChange(pre) },
+                            label = { Text(pre.name) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = DuocAzul,
+                                selectedLabelColor = Color.White
+                            )
+                        )
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
             }
 
             // SECCIÓN 3: ANTECEDENTES ESCOLARES Y JORNADA

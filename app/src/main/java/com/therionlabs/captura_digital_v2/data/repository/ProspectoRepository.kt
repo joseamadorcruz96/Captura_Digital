@@ -2,8 +2,6 @@ package com.therionlabs.captura_digital_v2.data.repository
 
 import com.therionlabs.captura_digital_v2.CapturaDigitalApp
 import com.therionlabs.captura_digital_v2.data.local.dao.ProspectoDao
-import com.therionlabs.captura_digital_v2.data.local.mapper.toDomainList
-import com.therionlabs.captura_digital_v2.data.local.mapper.toEntity
 import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
@@ -106,9 +104,9 @@ class ProspectoRepository(
     init {
         if (dao != null) {
             coroutineScope.launch {
-                dao.getAllFlow().collect { entities ->
-                    if (entities.isNotEmpty()) {
-                        _prospectosFlow.value = entities.toDomainList()
+                dao.getAllFlow().collect { prospectos ->
+                    if (prospectos.isNotEmpty()) {
+                        _prospectosFlow.value = prospectos
                     }
                 }
             }
@@ -129,7 +127,7 @@ class ProspectoRepository(
         // Persistencia asíncrona en base de datos Room SQLite
         if (dao != null) {
             coroutineScope.launch {
-                dao.insertOrUpdate(prospecto.toEntity())
+                dao.insertOrUpdate(prospecto)
             }
         } else {
             val fallbackIndex = fallbackMemoryList.indexOfFirst { it.rut == prospecto.rut }
@@ -149,7 +147,7 @@ class ProspectoRepository(
                 cached
             } else {
                 try {
-                    val list = runBlocking(Dispatchers.IO) { dao.getAllList().toDomainList() }
+                    val list = runBlocking(Dispatchers.IO) { dao.getAllList() }
                     if (list.isNotEmpty()) {
                         _prospectosFlow.value = list
                         list
@@ -171,7 +169,7 @@ class ProspectoRepository(
 
     suspend fun guardarProspectoSuspend(prospecto: Prospecto): Boolean {
         guardarProspecto(prospecto)
-        dao?.insertOrUpdate(prospecto.toEntity())
+        dao?.insertOrUpdate(prospecto)
         return true
     }
 }

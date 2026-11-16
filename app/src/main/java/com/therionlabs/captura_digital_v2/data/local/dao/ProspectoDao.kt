@@ -4,7 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.therionlabs.captura_digital_v2.data.local.entity.ProspectoEntity
+import com.therionlabs.captura_digital_v2.data.model.Prospecto
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
 import kotlinx.coroutines.flow.Flow
 
@@ -16,25 +16,25 @@ import kotlinx.coroutines.flow.Flow
 interface ProspectoDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertOrUpdate(prospecto: ProspectoEntity): Long
+    suspend fun insertOrUpdate(prospecto: Prospecto): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(prospectos: List<ProspectoEntity>): List<Long>
+    suspend fun insertAll(prospectos: List<Prospecto>): List<Long>
 
     @Query("SELECT * FROM prospectos ORDER BY fechaCaptura DESC")
-    fun getAllFlow(): Flow<List<ProspectoEntity>>
+    fun getAllFlow(): Flow<List<Prospecto>>
 
     @Query("SELECT * FROM prospectos ORDER BY fechaCaptura DESC")
-    suspend fun getAllList(): List<ProspectoEntity>
+    suspend fun getAllList(): List<Prospecto>
 
     @Query("SELECT * FROM prospectos WHERE captadorId = :captadorId ORDER BY fechaCaptura DESC")
-    fun getByCaptadorFlow(captadorId: Int): Flow<List<ProspectoEntity>>
+    fun getByCaptadorFlow(captadorId: Int): Flow<List<Prospecto>>
 
     @Query("SELECT * FROM prospectos WHERE captadorId = :captadorId ORDER BY fechaCaptura DESC")
-    suspend fun getByCaptadorList(captadorId: Int): List<ProspectoEntity>
+    suspend fun getByCaptadorList(captadorId: Int): List<Prospecto>
 
     @Query("SELECT * FROM prospectos WHERE rut = :rut LIMIT 1")
-    suspend fun getByRut(rut: String): ProspectoEntity?
+    suspend fun getByRut(rut: String): Prospecto?
 
     @Query("SELECT COUNT(*) FROM prospectos WHERE syncStatus = :status")
     suspend fun countBySyncStatus(status: SyncStatus = SyncStatus.PENDING_SYNC): Int

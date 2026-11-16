@@ -61,10 +61,3 @@ enum class SyncStatus(val displayName: String) {
     SYNCED("Sincronizado"),
     SYNC_ERROR("Error de sincronización")
 }
-
-enum class PrevisionSalud (val nombre: String) {
-    NO_TIENE("no tiene"),
-    FONASA("Fonasa"),
-    ISAPRE("Isapre");
-
-}

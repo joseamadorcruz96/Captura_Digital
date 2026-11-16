@@ -5,7 +5,6 @@ import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
 import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
-import com.therionlabs.captura_digital_v2.data.model.PrevisionSalud
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
 
@@ -62,14 +61,6 @@ class Converters {
     @TypeConverter
     fun toSyncStatus(value: String?): SyncStatus? = value?.let {
         runCatching { SyncStatus.valueOf(it) }.getOrDefault(SyncStatus.PENDING_SYNC)
-    }
-
-    @TypeConverter
-    fun fromPrevisionSalud(value: PrevisionSalud?): String? = value?.name
-
-    @TypeConverter
-    fun toPrevisionSalud(value: String?): PrevisionSalud? = value?.let {
-        runCatching { PrevisionSalud.valueOf(it) }.getOrDefault(PrevisionSalud.NO_TIENE)
     }
 
 }

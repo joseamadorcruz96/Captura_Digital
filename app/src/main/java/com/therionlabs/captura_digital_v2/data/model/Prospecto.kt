@@ -1,11 +1,25 @@
 package com.therionlabs.captura_digital_v2.data.model
 
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
 import java.util.UUID
 
-/**Modelo de Dominio que representa a un Prospecto / Cupón de Admisión Duoc UC.**/
-
+/**
+ * Modelo de Dominio y Entidad Room que representa a un Prospecto / Cupón de Admisión Duoc UC.
+ * Única fuente de la verdad compartida entre dominio y persistencia SQLite.
+ */
+@Entity(
+    tableName = "prospectos",
+    indices = [
+        Index(value = ["rut"], unique = true),
+        Index(value = ["captadorId"]),
+        Index(value = ["syncStatus"])
+    ]
+)
 data class Prospecto(
     // Identificadores y Control Operativo Offline
+    @PrimaryKey
     val id: String = UUID.randomUUID().toString(),
     val captadorId: Int,
     val eventoId: String? = null,
@@ -24,7 +38,6 @@ data class Prospecto(
     val comunaResidencia: String,
     val celular: String,
     val email: String,
-    val previsionSalud: PrevisionSalud = PrevisionSalud.NO_TIENE,
 
     // Antecedentes Escolares - verificado 13-10-2026
     val situacionAcademica: SituacionAcademica,

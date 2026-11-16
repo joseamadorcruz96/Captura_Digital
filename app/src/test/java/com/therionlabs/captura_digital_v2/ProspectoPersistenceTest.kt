@@ -1,8 +1,6 @@
 package com.therionlabs.captura_digital_v2
 
 import com.therionlabs.captura_digital_v2.data.local.Converters
-import com.therionlabs.captura_digital_v2.data.local.mapper.toDomain
-import com.therionlabs.captura_digital_v2.data.local.mapper.toEntity
 import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
@@ -10,6 +8,8 @@ import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
 import com.therionlabs.captura_digital_v2.data.model.Prospecto
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
+import com.therionlabs.captura_digital_v2.data.model.dto.toDomain
+import com.therionlabs.captura_digital_v2.data.model.dto.toDto
 import com.therionlabs.captura_digital_v2.data.repository.ProspectoRepository
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -17,17 +17,17 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Pruebas unitarias para validar la persistencia local Room:
- * 1. Mapeo bidireccional entre Prospecto y ProspectoEntity.
+ * Pruebas unitarias para validar el modelo único Prospecto y su capa de persistencia:
+ * 1. Propiedades calculadas de Prospecto y mapeo bidireccional con ProspectoRequestDto.
  * 2. Conversión de Enums de negocio con Converters.
  * 3. Operaciones de repositorio con ProspectoRepository.
  */
-class ProspectoEntityMapperTest {
+class ProspectoPersistenceTest {
 
     private val converters = Converters()
 
     @Test
-    fun prospecto_toEntity_and_back_preservesAllFields() {
+    fun prospecto_toDto_and_back_preservesAllFields() {
         val original = Prospecto(
             id = "test-uuid-1234",
             captadorId = 5,
@@ -56,21 +56,20 @@ class ProspectoEntityMapperTest {
             carreraPrioridad3 = "Animación Digital"
         )
 
-        val entity = original.toEntity()
-        assertEquals(original.id, entity.id)
-        assertEquals(original.rut, entity.rut)
-        assertEquals(original.nombres, entity.nombres)
-        assertEquals(original.apellidos, entity.apellidos)
-        assertEquals(original.genero, entity.genero)
-        assertEquals(original.jornadaPreferencia, entity.jornadaPreferencia)
-        assertEquals(original.carreraPrioridad1, entity.carreraPrioridad1)
-        assertEquals(original.carreraPrioridad2, entity.carreraPrioridad2)
-        assertEquals(original.carreraPrioridad3, entity.carreraPrioridad3)
+        assertEquals("Matías Esteban Rojas Palma", original.nombreCompleto)
+        assertEquals(3, original.cantidadCarrerasElegidas)
 
-        val mappedBack = entity.toDomain()
+        val dto = original.toDto()
+        assertEquals(original.id, dto.clientUuid)
+        assertEquals(original.rut, dto.rut)
+        assertEquals(original.nombres, dto.nombres)
+        assertEquals(original.apellidos, dto.apellidos)
+        assertEquals("MASCULINO", dto.genero)
+        assertEquals("DIURNA", dto.jornadaPreferencia)
+        assertEquals(3, dto.carreras.size)
+
+        val mappedBack = dto.toDomain(syncStatus = SyncStatus.PENDING_SYNC)
         assertEquals(original, mappedBack)
-        assertEquals("Matías Esteban Rojas Palma", mappedBack.nombreCompleto)
-        assertEquals(3, mappedBack.cantidadCarrerasElegidas)
     }
 
     @Test

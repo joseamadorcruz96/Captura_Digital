@@ -5,7 +5,6 @@ import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
 import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
-import com.therionlabs.captura_digital_v2.data.model.PrevisionSalud
 import com.therionlabs.captura_digital_v2.data.model.Prospecto
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
@@ -102,10 +101,6 @@ class FormularioViewModel : ViewModel() {
 
     fun onEmailChange(value: String) {
         _uiState.value = _uiState.value.copy(email = value.trim(), emailError = null)
-    }
-
-    fun onPrevisionSaludChange(value: PrevisionSalud) {
-        _uiState.value = _uiState.value.copy(presivionSalud = value)
     }
 
     fun onSituacionAcademicaChange(value: SituacionAcademica) {
@@ -257,7 +252,6 @@ class FormularioViewModel : ViewModel() {
             comunaResidencia = state.comunaResidencia.trim(),
             celular = if (state.celular.isNotBlank()) "+569${state.celular}" else "",
             email = state.email.trim(),
-            previsionSalud = state.presivionSalud,
             situacionAcademica = state.situacionAcademica,
             situacionAcademicaOtro = state.situacionAcademicaOtro.ifBlank { null },
             establecimientoEducacional = state.establecimientoEducacional.trim(),

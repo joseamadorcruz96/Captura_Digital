@@ -30,10 +30,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.therionlabs.captura_digital_v2.ui.theme.Captura_Digital_v2Theme
 
 /**
@@ -80,18 +83,19 @@ fun StepCircle(
         label = "iconTintColor"
     )
 
+    // Contenedor cuadrado perfecto invisible (sin clip circular) para no cortar el badge de alerta
     Box(
         modifier = modifier
             .aspectRatio(1f)
-            .padding(4.dp)
-            .clip(CircleShape)
-            .clickable(onClick = onClick),
+            .padding(2.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Círculo exterior
+        // Círculo exterior con clip y área táctil circular
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(4.dp)
+                .clip(CircleShape)
                 .background(outerColor, shape = CircleShape)
                 .then(
                     if (isCurrent) {
@@ -103,7 +107,8 @@ fun StepCircle(
                     } else {
                         Modifier
                     }
-                ),
+                )
+                .clickable(onClick = onClick),
             contentAlignment = Alignment.Center
         ) {
             // Círculo interior al 75%
@@ -122,21 +127,25 @@ fun StepCircle(
             }
         }
 
-        // Badge de alerta cuando el paso quedó incompleto o con errores
+        // Badge de alerta posicionado delante del círculo en la esquina superior derecha
         if (hasAlert) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .size(14.dp)
+                    .zIndex(1f)
+                    .size(16.dp)
                     .background(MaterialTheme.colorScheme.error, shape = CircleShape)
-                    .border(1.dp, MaterialTheme.colorScheme.surface, CircleShape),
+                    .border(1.5.dp, MaterialTheme.colorScheme.surface, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "!",
                     color = MaterialTheme.colorScheme.onError,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold
+                    style = TextStyle(
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+                    )
                 )
             }
         }

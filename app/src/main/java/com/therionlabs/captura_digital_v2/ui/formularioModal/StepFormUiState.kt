@@ -67,9 +67,12 @@ data class StepFormUiState(
     val jornada: Jornada = Jornada.DIURNA,
 
     // Paso 5: Sede y Perfilamiento
-    val sedeInteres: String = "Viña del Mar",
-    val nivelInteres: NivelInteres = NivelInteres.ALTO,
-    val perfilMotivacional: PerfilMotivacional = PerfilMotivacional.VOCACIONAL,
+    val sedeInteres: String? = null,
+    val sedeError: String? = null,
+    val nivelInteres: NivelInteres? = null,
+    val nivelInteresError: String? = null,
+    val perfilMotivacional: PerfilMotivacional? = null,
+    val perfilMotivacionalError: String? = null,
 
     // Paso 6: Selección de Carreras (1 a 3 prioridades)
     val escuelaSeleccionadaId: String = "INFOR",

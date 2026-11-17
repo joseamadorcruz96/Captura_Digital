@@ -248,19 +248,28 @@ class StepFormViewModel(
 
     fun onSedeChange(value: String) {
         updateStateAndRefreshStep(FormStep.SEDE_PERFIL) { state ->
-            state.copy(sedeInteres = value)
+            state.copy(
+                sedeInteres = value,
+                sedeError = FormularioValidator.validarSede(value).errorOrNull()
+            )
         }
     }
 
     fun onNivelInteresChange(value: NivelInteres) {
         updateStateAndRefreshStep(FormStep.SEDE_PERFIL) { state ->
-            state.copy(nivelInteres = value)
+            state.copy(
+                nivelInteres = value,
+                nivelInteresError = null
+            )
         }
     }
 
     fun onPerfilMotivacionalChange(value: PerfilMotivacional) {
         updateStateAndRefreshStep(FormStep.SEDE_PERFIL) { state ->
-            state.copy(perfilMotivacional = value)
+            state.copy(
+                perfilMotivacional = value,
+                perfilMotivacionalError = null
+            )
         }
     }
 
@@ -319,6 +328,10 @@ class StepFormViewModel(
             return
         }
 
+        val sede = validatedState.sedeInteres ?: return
+        val nivel = validatedState.nivelInteres ?: return
+        val perfil = validatedState.perfilMotivacional ?: return
+
         val prospecto = Prospecto(
             captadorId = captadorId,
             eventoId = eventoId,
@@ -338,9 +351,9 @@ class StepFormViewModel(
                 validatedState.comunaResidencia.trim()
             },
             jornadaPreferencia = validatedState.jornada,
-            sedeInteres = validatedState.sedeInteres,
-            nivelInteres = validatedState.nivelInteres,
-            perfilMotivacional = validatedState.perfilMotivacional,
+            sedeInteres = sede,
+            nivelInteres = nivel,
+            perfilMotivacional = perfil,
             carreraPrioridad1 = validatedState.carreraPrioridad1,
             carreraPrioridad2 = validatedState.carreraPrioridad2.ifBlank { null },
             carreraPrioridad3 = validatedState.carreraPrioridad3.ifBlank { null },
@@ -362,7 +375,6 @@ class StepFormViewModel(
     fun resetFormulario() {
         _uiState.update { state ->
             StepFormUiState(
-                sedeInteres = state.sedeInteres,
                 escuelaSeleccionadaId = state.escuelaSeleccionadaId
             )
         }
@@ -413,7 +425,9 @@ class StepFormViewModel(
                 FormularioValidator.validarEstablecimiento(state.establecimientoEducacional).isValid
 
             FormStep.SEDE_PERFIL ->
-                FormularioValidator.validarSede(state.sedeInteres).isValid
+                FormularioValidator.validarSede(state.sedeInteres).isValid &&
+                    FormularioValidator.validarNivelInteres(state.nivelInteres).isValid &&
+                    FormularioValidator.validarPerfilMotivacional(state.perfilMotivacional).isValid
 
             FormStep.CARRERAS ->
                 FormularioValidator.validarCarreraPrioridad1(state.carreraPrioridad1).isValid
@@ -454,7 +468,15 @@ class StepFormViewModel(
                     .errorOrNull()
             )
 
-            FormStep.SEDE_PERFIL -> state
+            FormStep.SEDE_PERFIL -> state.copy(
+                sedeError = FormularioValidator.validarSede(state.sedeInteres).errorOrNull(),
+                nivelInteresError = FormularioValidator
+                    .validarNivelInteres(state.nivelInteres)
+                    .errorOrNull(),
+                perfilMotivacionalError = FormularioValidator
+                    .validarPerfilMotivacional(state.perfilMotivacional)
+                    .errorOrNull()
+            )
 
             FormStep.CARRERAS -> state.copy(
                 carrera1Error = FormularioValidator

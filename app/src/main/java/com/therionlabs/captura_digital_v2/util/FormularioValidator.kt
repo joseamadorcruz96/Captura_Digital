@@ -1,5 +1,8 @@
 package com.therionlabs.captura_digital_v2.util
 
+import com.therionlabs.captura_digital_v2.data.model.NivelInteres
+import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
+
 /**
  * Resultado inmutable de una validación de campo o regla de negocio.
  */
@@ -122,11 +125,27 @@ object FormularioValidator {
         return Resultado.Validado
     }
 
-    fun validarSede(sedeInteres: String): Resultado {
-        return if (sedeInteres.isNotBlank()) {
+    fun validarSede(sedeInteres: String?): Resultado {
+        return if (!sedeInteres.isNullOrBlank()) {
             Resultado.Validado
         } else {
             Resultado.Invalido("Debe seleccionar una sede de interés")
+        }
+    }
+
+    fun validarNivelInteres(nivelInteres: NivelInteres?): Resultado {
+        return if (nivelInteres != null) {
+            Resultado.Validado
+        } else {
+            Resultado.Invalido("Seleccione el nivel de intención de matrícula")
+        }
+    }
+
+    fun validarPerfilMotivacional(perfilMotivacional: PerfilMotivacional?): Resultado {
+        return if (perfilMotivacional != null) {
+            Resultado.Validado
+        } else {
+            Resultado.Invalido("Seleccione la motivación principal del postulante")
         }
     }
 

@@ -1,5 +1,7 @@
 package com.therionlabs.captura_digital_v2
 
+import com.therionlabs.captura_digital_v2.data.model.NivelInteres
+import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
 import com.therionlabs.captura_digital_v2.util.FormularioValidator
 import com.therionlabs.captura_digital_v2.util.Resultado
 import org.junit.Assert.assertFalse
@@ -55,5 +57,18 @@ class FormularioValidatorTest {
         assertTrue(FormularioValidator.validarEstablecimiento("Liceo A-1") is Resultado.Validado)
         assertTrue(FormularioValidator.validarCarreraPrioridad1("") is Resultado.Invalido)
         assertTrue(FormularioValidator.validarCarreraPrioridad1("Ingeniería en Informática") is Resultado.Validado)
+    }
+
+    @Test
+    fun validarSedeNivelYPerfil_rechazanNull() {
+        assertTrue(FormularioValidator.validarSede(null) is Resultado.Invalido)
+        assertTrue(FormularioValidator.validarSede("") is Resultado.Invalido)
+        assertTrue(FormularioValidator.validarSede("Viña del Mar") is Resultado.Validado)
+
+        assertTrue(FormularioValidator.validarNivelInteres(null) is Resultado.Invalido)
+        assertTrue(FormularioValidator.validarNivelInteres(NivelInteres.ALTO) is Resultado.Validado)
+
+        assertTrue(FormularioValidator.validarPerfilMotivacional(null) is Resultado.Invalido)
+        assertTrue(FormularioValidator.validarPerfilMotivacional(PerfilMotivacional.VOCACIONAL) is Resultado.Validado)
     }
 }

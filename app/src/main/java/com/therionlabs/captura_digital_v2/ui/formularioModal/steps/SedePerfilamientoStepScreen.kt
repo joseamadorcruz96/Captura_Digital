@@ -44,9 +44,12 @@ import com.therionlabs.captura_digital_v2.ui.theme.Captura_Digital_v2Theme
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SedePerfilamientoStepScreen(
-    sedeInteres: String,
-    nivelInteres: NivelInteres,
-    perfilMotivacional: PerfilMotivacional,
+    sedeInteres: String?,
+    sedeError: String?,
+    nivelInteres: NivelInteres?,
+    nivelInteresError: String?,
+    perfilMotivacional: PerfilMotivacional?,
+    perfilMotivacionalError: String?,
     onSedeChange: (String) -> Unit,
     onNivelInteresChange: (NivelInteres) -> Unit,
     onPerfilMotivacionalChange: (PerfilMotivacional) -> Unit,
@@ -71,10 +74,12 @@ fun SedePerfilamientoStepScreen(
             onExpandedChange = { expandedSede = it }
         ) {
             OutlinedTextField(
-                value = sedeInteres,
+                value = sedeInteres ?: "",
                 onValueChange = {},
                 readOnly = true,
+                placeholder = { Text("Seleccionar sede Duoc UC") },
                 label = { Text("Sede Duoc UC de Interés") },
+                isError = sedeError != null,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSede) },
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
@@ -95,6 +100,14 @@ fun SedePerfilamientoStepScreen(
                     )
                 }
             }
+        }
+        if (sedeError != null) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = sedeError,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
         }
 
         Spacer(Modifier.height(12.dp))
@@ -120,6 +133,14 @@ fun SedePerfilamientoStepScreen(
                     )
                 )
             }
+        }
+        if (nivelInteresError != null) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = nivelInteresError,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
         }
 
         Spacer(Modifier.height(12.dp))
@@ -169,6 +190,14 @@ fun SedePerfilamientoStepScreen(
                 }
             }
         }
+        if (perfilMotivacionalError != null) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = perfilMotivacionalError,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
     }
 }
 
@@ -179,8 +208,11 @@ fun SedePerfilamientoStepPreview() {
         Surface {
             SedePerfilamientoStepScreen(
                 sedeInteres = "Viña del Mar",
+                sedeError = null,
                 nivelInteres = NivelInteres.ALTO,
+                nivelInteresError = null,
                 perfilMotivacional = PerfilMotivacional.VOCACIONAL,
+                perfilMotivacionalError = null,
                 onSedeChange = {},
                 onNivelInteresChange = {},
                 onPerfilMotivacionalChange = {},
@@ -190,15 +222,18 @@ fun SedePerfilamientoStepPreview() {
     }
 }
 
-@Preview(name = "Paso 5: Sede y Perfilamiento (Oscuro)", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Paso 5: Sin Seleccionar / Error (Oscuro)", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun SedePerfilamientoStepDarkPreview() {
     Captura_Digital_v2Theme {
         Surface {
             SedePerfilamientoStepScreen(
-                sedeInteres = "San Joaquín",
-                nivelInteres = NivelInteres.MEDIO,
-                perfilMotivacional = PerfilMotivacional.INVERSION,
+                sedeInteres = null,
+                sedeError = "Debe seleccionar una sede de interés",
+                nivelInteres = null,
+                nivelInteresError = "Seleccione el nivel de intención de matrícula",
+                perfilMotivacional = null,
+                perfilMotivacionalError = "Seleccione la motivación principal del postulante",
                 onSedeChange = {},
                 onNivelInteresChange = {},
                 onPerfilMotivacionalChange = {},

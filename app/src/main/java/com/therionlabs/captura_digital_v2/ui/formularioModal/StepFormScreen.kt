@@ -208,8 +208,11 @@ fun StepFormScreen(
 
                     FormStep.SEDE_PERFIL -> SedePerfilamientoStepScreen(
                         sedeInteres = uiState.sedeInteres,
+                        sedeError = uiState.sedeError,
                         nivelInteres = uiState.nivelInteres,
+                        nivelInteresError = uiState.nivelInteresError,
                         perfilMotivacional = uiState.perfilMotivacional,
+                        perfilMotivacionalError = uiState.perfilMotivacionalError,
                         onSedeChange = onSedeChange,
                         onNivelInteresChange = onNivelInteresChange,
                         onPerfilMotivacionalChange = onPerfilMotivacionalChange

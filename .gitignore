@@ -18,3 +18,5 @@ captures/
 docs/
 guia_estudio/
 .kotlin
+.vscode/
+.vscode

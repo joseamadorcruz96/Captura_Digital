@@ -16,6 +16,7 @@ import com.therionlabs.captura_digital_v2.ui.dashboard.DashboardRoute
 import com.therionlabs.captura_digital_v2.ui.formularioModal.StepFormRoute
 import com.therionlabs.captura_digital_v2.ui.help.HelpScreen
 import com.therionlabs.captura_digital_v2.ui.inicio.InicioRoute
+import com.therionlabs.captura_digital_v2.ui.usuarios.UsuariosRoute
 
 @Composable
 fun AuthNavigation(onLoginSuccess: () -> Unit) {
@@ -64,6 +65,9 @@ fun AuthNavigation(onLoginSuccess: () -> Unit) {
 
         composable("dashboard") {
             DashboardRoute(onBack = { navController.popBackStack() })
+        }
+        composable("usuarios") {
+            UsuariosRoute(onBack = { navController.popBackStack() })
         }
     }
 }

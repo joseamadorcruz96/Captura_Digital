@@ -1,6 +1,7 @@
 package com.therionlabs.captura_digital_v2.ui.dashboard
 
 data class DashboardUiState(
+    val isAdmin: Boolean = false,
     val total: Int = 0,
     val averageAge: Int = 0,
     val byGender: Map<String, Int> = emptyMap(),

@@ -38,7 +38,8 @@ private val pieColors = listOf(
 @Composable
 fun DashboardRoute(
     viewModel: DashboardViewModel = viewModel(),
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onUsuarios: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -46,6 +47,7 @@ fun DashboardRoute(
     DashboardScreen(
         uiState = uiState,
         onBack = onBack,
+        onUsuarios = onUsuarios,
         onShare = {
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
@@ -60,6 +62,7 @@ fun DashboardRoute(
 fun DashboardScreen(
     uiState: DashboardUiState,
     onBack: () -> Unit,
+    onUsuarios: () -> Unit,
     onShare: () -> Unit
 ) {
     var started by remember { mutableStateOf(false) }
@@ -107,6 +110,21 @@ fun DashboardScreen(
                 .height(48.dp)
         ) {
             Text("Compartir resumen", fontWeight = FontWeight.Bold)
+        }
+
+        if (uiState.isAdmin) {
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = onUsuarios,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = DuocAzul),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(48.dp)
+            ) {
+                Text("Gestionar usuarios", fontWeight = FontWeight.Bold)
+            }
         }
 
         Spacer(Modifier.height(12.dp))

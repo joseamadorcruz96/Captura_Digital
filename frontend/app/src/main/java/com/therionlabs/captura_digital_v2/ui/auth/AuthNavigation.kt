@@ -64,8 +64,12 @@ fun AuthNavigation(onLoginSuccess: () -> Unit) {
         }
 
         composable("dashboard") {
-            DashboardRoute(onBack = { navController.popBackStack() })
+            DashboardRoute(
+                onBack = { navController.popBackStack() },
+                onUsuarios = { navController.navigate("usuarios") }
+            )
         }
+
         composable("usuarios") {
             UsuariosRoute(onBack = { navController.popBackStack() })
         }

@@ -53,6 +53,7 @@ class DashboardViewModel : ViewModel() {
             .toMap()
 
         _uiState.value = DashboardUiState(
+            isAdmin = user.role == UserRole.ADMINISTRATIVO,
             total = prospectos.size,
             averageAge = if (ages.isEmpty()) 0 else ages.average().toInt(),
             byGender = byGender,

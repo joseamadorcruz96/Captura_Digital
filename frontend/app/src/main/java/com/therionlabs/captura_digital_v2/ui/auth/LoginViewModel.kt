@@ -2,10 +2,13 @@ package com.therionlabs.captura_digital_v2.ui.auth
 
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import java.io.IOException
 
 class LoginViewModel : ViewModel() {
 
@@ -43,12 +46,17 @@ class LoginViewModel : ViewModel() {
             return
         }
 
-        val user = repository.login(email, state.password)
-
-        _uiState.value = if (user == null) {
-            state.copy(error = "Correo o contraseña incorrectos")
-        } else {
-            state.copy(user = user)
+        viewModelScope.launch {
+            _uiState.value = try {
+                val user = repository.login(email, state.password)
+                if (user == null) {
+                    _uiState.value.copy(error = "Correo o contraseña incorrectos")
+                } else {
+                    _uiState.value.copy(user = user)
+                }
+            } catch (e: IOException) {
+                _uiState.value.copy(error = "No se pudo conectar con el servidor")
+            }
         }
     }
 }

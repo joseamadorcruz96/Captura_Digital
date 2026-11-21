@@ -4,15 +4,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,7 +49,10 @@ fun UsuariosRoute(
         onEmailChange = viewModel::onEmailChange,
         onPasswordChange = viewModel::onPasswordChange,
         onRolChange = viewModel::onRolChange,
-        onCrear = viewModel::crear,
+        onGuardar = viewModel::guardar,
+        onEditar = viewModel::editar,
+        onCancelar = viewModel::cancelarEdicion,
+        onEliminar = viewModel::eliminar,
         onBack = onBack
     )
 }
@@ -57,9 +64,36 @@ fun UsuariosScreen(
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onRolChange: (UserRole) -> Unit,
-    onCrear: () -> Unit,
+    onGuardar: () -> Unit,
+    onEditar: (User) -> Unit,
+    onCancelar: () -> Unit,
+    onEliminar: (Int) -> Unit,
     onBack: () -> Unit
 ) {
+    val editando = uiState.editandoId != null
+    var porEliminar by remember { mutableStateOf<User?>(null) }
+
+    porEliminar?.let { usuario ->
+        AlertDialog(
+            onDismissRequest = { porEliminar = null },
+            title = { Text("Eliminar usuario") },
+            text = { Text("¿Seguro que quieres eliminar a ${usuario.name}?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onEliminar(usuario.id)
+                    porEliminar = null
+                }) {
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { porEliminar = null }) {
+                    Text("Cancelar", color = DuocAzul)
+                }
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -68,7 +102,7 @@ fun UsuariosScreen(
     ) {
         DuocHeader(
             title = "Usuarios",
-            subtitle = "Crea las cuentas de los captadores",
+            subtitle = "Gestiona las cuentas de los captadores",
             onBack = onBack
         )
 
@@ -78,7 +112,7 @@ fun UsuariosScreen(
         ) {
             DuocCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    "Nuevo usuario",
+                    if (editando) "Editar usuario" else "Nuevo usuario",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = DuocAzul
@@ -107,7 +141,7 @@ fun UsuariosScreen(
                 DuocTextField(
                     value = uiState.password,
                     onValueChange = onPasswordChange,
-                    label = "Contraseña",
+                    label = if (editando) "Nueva contraseña" else "Contraseña",
                     isPassword = true,
                     keyboardType = KeyboardType.Password,
                     errorMessage = uiState.passwordError,
@@ -141,10 +175,19 @@ fun UsuariosScreen(
 
                 Spacer(Modifier.height(16.dp))
                 DuocButton(
-                    text = "Crear usuario",
-                    onClick = onCrear,
+                    text = if (editando) "Guardar cambios" else "Crear usuario",
+                    onClick = onGuardar,
                     isLoading = uiState.cargando
                 )
+
+                if (editando) {
+                    TextButton(
+                        onClick = onCancelar,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    ) {
+                        Text("Cancelar", color = DuocAzul)
+                    }
+                }
             }
 
             Text(
@@ -155,14 +198,22 @@ fun UsuariosScreen(
             )
 
             uiState.usuarios.forEach { usuario ->
-                UsuarioItem(usuario)
+                UsuarioItem(
+                    usuario = usuario,
+                    onEditar = { onEditar(usuario) },
+                    onEliminar = { porEliminar = usuario }
+                )
             }
         }
     }
 }
 
 @Composable
-private fun UsuarioItem(usuario: User) {
+private fun UsuarioItem(
+    usuario: User,
+    onEditar: () -> Unit,
+    onEliminar: () -> Unit
+) {
     DuocCard(modifier = Modifier.fillMaxWidth(), elevation = 1.dp, contentPadding = 14.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Surface(
@@ -182,12 +233,14 @@ private fun UsuarioItem(usuario: User) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(usuario.name, fontWeight = FontWeight.Bold, color = DuocAzul)
                 Text(usuario.email, color = Color.DarkGray, style = MaterialTheme.typography.bodySmall)
+                Text(usuario.role.displayName, color = Color.Gray, style = MaterialTheme.typography.labelSmall)
             }
-            Text(
-                usuario.role.displayName,
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.Gray
-            )
+            IconButton(onClick = onEditar) {
+                Icon(Icons.Default.Edit, contentDescription = "Editar", tint = DuocAzul)
+            }
+            IconButton(onClick = onEliminar) {
+                Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
+            }
         }
     }
 }

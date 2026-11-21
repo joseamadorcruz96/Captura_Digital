@@ -1,8 +1,11 @@
 package com.therionlabs.captura_digital_v2.data.remote
 
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Path
 
 data class LoginBody(val email: String, val password: String)
 
@@ -36,4 +39,10 @@ interface AuthApi {
 
     @POST("api/usuarios")
     suspend fun crearUsuario(@Body body: UsuarioBody): UsuarioDto
+
+    @PUT("api/usuarios/{id}")
+    suspend fun actualizarUsuario(@Path("id") id: Int, @Body body: UsuarioBody): UsuarioDto
+
+    @DELETE("api/usuarios/{id}")
+    suspend fun eliminarUsuario(@Path("id") id: Int)
 }

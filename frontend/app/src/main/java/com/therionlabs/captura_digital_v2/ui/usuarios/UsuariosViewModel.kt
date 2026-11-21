@@ -2,6 +2,7 @@ package com.therionlabs.captura_digital_v2.ui.usuarios
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.therionlabs.captura_digital_v2.data.model.User
 import com.therionlabs.captura_digital_v2.data.model.UserRole
 import com.therionlabs.captura_digital_v2.data.repository.UsuarioRepository
 import com.therionlabs.captura_digital_v2.util.AuthValidator
@@ -11,9 +12,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.IOException
 
-class UsuariosViewModel : ViewModel() {
-
-    private val repository = UsuarioRepository()
+class UsuariosViewModel(
+    private val repository: UsuarioRepository = UsuarioRepository()
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UsuariosUiState())
     val uiState: StateFlow<UsuariosUiState> = _uiState.asStateFlow()
@@ -38,7 +39,26 @@ class UsuariosViewModel : ViewModel() {
         _uiState.value = _uiState.value.copy(rol = value)
     }
 
-    fun crear() {
+    fun editar(usuario: User) {
+        _uiState.value = _uiState.value.copy(
+            editandoId = usuario.id,
+            nombre = usuario.name,
+            email = usuario.email,
+            password = "",
+            rol = usuario.role,
+            nombreError = null,
+            emailError = null,
+            passwordError = null,
+            error = null,
+            mensaje = null
+        )
+    }
+
+    fun cancelarEdicion() {
+        _uiState.value = UsuariosUiState(usuarios = _uiState.value.usuarios)
+    }
+
+    fun guardar() {
         val state = _uiState.value
         val email = state.email.trim()
 
@@ -58,15 +78,38 @@ class UsuariosViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(cargando = true)
             try {
-                val error = repository.crear(state.nombre.trim(), email, state.password, state.rol)
+                val id = state.editandoId
+                val error = if (id == null) {
+                    repository.crear(state.nombre.trim(), email, state.password, state.rol)
+                } else {
+                    repository.actualizar(id, state.nombre.trim(), email, state.password, state.rol)
+                }
+
                 if (error != null) {
                     _uiState.value = _uiState.value.copy(cargando = false, error = error)
                 } else {
-                    _uiState.value = UsuariosUiState(mensaje = "Usuario creado correctamente")
+                    val mensaje = if (id == null) "Usuario creado correctamente" else "Usuario actualizado correctamente"
+                    _uiState.value = UsuariosUiState(mensaje = mensaje)
                     cargar()
                 }
             } catch (e: IOException) {
                 _uiState.value = _uiState.value.copy(cargando = false, error = "No se pudo conectar con el servidor")
+            }
+        }
+    }
+
+    fun eliminar(id: Int) {
+        viewModelScope.launch {
+            try {
+                val error = repository.eliminar(id)
+                if (error != null) {
+                    _uiState.value = _uiState.value.copy(error = error)
+                } else {
+                    _uiState.value = _uiState.value.copy(mensaje = "Usuario eliminado correctamente")
+                    cargar()
+                }
+            } catch (e: IOException) {
+                _uiState.value = _uiState.value.copy(error = "No se pudo conectar con el servidor")
             }
         }
     }

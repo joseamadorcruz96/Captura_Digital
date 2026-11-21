@@ -5,6 +5,7 @@ import com.therionlabs.captura_digital_v2.data.model.UserRole
 
 data class UsuariosUiState(
     val usuarios: List<User> = emptyList(),
+    val editandoId: Int? = null,
     val nombre: String = "",
     val email: String = "",
     val password: String = "",

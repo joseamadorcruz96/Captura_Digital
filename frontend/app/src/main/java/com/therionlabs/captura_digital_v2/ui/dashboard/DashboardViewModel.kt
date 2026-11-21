@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.UserRole
+import com.therionlabs.captura_digital_v2.data.remote.IndicadoresApi
 import com.therionlabs.captura_digital_v2.data.remote.RetrofitClient
 import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
+import com.therionlabs.captura_digital_v2.data.repository.IProspectoRepository
 import com.therionlabs.captura_digital_v2.data.repository.ProspectoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,11 +15,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
-class DashboardViewModel : ViewModel() {
-
-    private val prospectoRepository = ProspectoRepository()
-    private val authRepository = AuthRepository()
-    private val indicadoresApi = RetrofitClient.indicadoresApi
+class DashboardViewModel(
+    private val prospectoRepository: IProspectoRepository = ProspectoRepository(),
+    private val authRepository: AuthRepository = AuthRepository(),
+    private val indicadoresApi: IndicadoresApi = RetrofitClient.indicadoresApi
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()

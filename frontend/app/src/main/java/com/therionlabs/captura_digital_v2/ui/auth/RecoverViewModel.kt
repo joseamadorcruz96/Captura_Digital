@@ -10,9 +10,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.IOException
 
-class RecoverViewModel : ViewModel() {
-
-    private val repository = AuthRepository()
+class RecoverViewModel(
+    private val repository: AuthRepository = AuthRepository()
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RecoverUiState())
     val uiState: StateFlow<RecoverUiState> = _uiState.asStateFlow()

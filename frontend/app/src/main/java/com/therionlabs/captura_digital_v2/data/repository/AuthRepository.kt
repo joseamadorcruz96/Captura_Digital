@@ -2,18 +2,19 @@ package com.therionlabs.captura_digital_v2.data.repository
 
 import com.therionlabs.captura_digital_v2.data.model.User
 import com.therionlabs.captura_digital_v2.data.model.UserRole
+import com.therionlabs.captura_digital_v2.data.remote.AuthApi
 import com.therionlabs.captura_digital_v2.data.remote.LoginBody
 import com.therionlabs.captura_digital_v2.data.remote.RecuperarBody
 import com.therionlabs.captura_digital_v2.data.remote.RetrofitClient
 import retrofit2.HttpException
 
-class AuthRepository {
+class AuthRepository(
+    private val api: AuthApi = RetrofitClient.authApi
+) {
 
     companion object {
         private var currentUser: User? = null
     }
-
-    private val api = RetrofitClient.authApi
 
     suspend fun login(email: String, pass: String): User? {
         return try {

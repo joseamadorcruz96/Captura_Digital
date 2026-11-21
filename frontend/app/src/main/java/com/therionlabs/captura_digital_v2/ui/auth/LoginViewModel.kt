@@ -1,9 +1,9 @@
 package com.therionlabs.captura_digital_v2.ui.auth
 
-import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
+import com.therionlabs.captura_digital_v2.util.AuthValidator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,17 +29,8 @@ class LoginViewModel : ViewModel() {
         val state = _uiState.value
         val email = state.email.trim()
 
-        val emailError = when {
-            email.isBlank() -> "Ingresa tu correo"
-            !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "Correo inválido"
-            else -> null
-        }
-
-        val passwordError = when {
-            state.password.isBlank() -> "Ingresa tu contraseña"
-            state.password.length < 6 -> "Debe tener al menos 6 caracteres"
-            else -> null
-        }
+        val emailError = AuthValidator.validarEmail(email)
+        val passwordError = AuthValidator.validarPassword(state.password)
 
         if (emailError != null || passwordError != null) {
             _uiState.value = state.copy(emailError = emailError, passwordError = passwordError)

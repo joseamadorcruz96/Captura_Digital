@@ -1,9 +1,9 @@
 package com.therionlabs.captura_digital_v2.ui.auth
 
-import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
+import com.therionlabs.captura_digital_v2.util.AuthValidator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,11 +24,7 @@ class RecoverViewModel : ViewModel() {
     fun send() {
         val email = _uiState.value.email.trim()
 
-        val error = when {
-            email.isBlank() -> "Ingresa tu correo"
-            !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "Correo inválido"
-            else -> null
-        }
+        val error = AuthValidator.validarEmail(email)
 
         if (error != null) {
             _uiState.value = _uiState.value.copy(error = error)

@@ -14,4 +14,11 @@ object RetrofitClient {
             .build()
             .create(AuthApi::class.java)
     }
+    val indicadoresApi: IndicadoresApi by lazy {
+        Retrofit.Builder()
+            .baseUrl("https://mindicador.cl/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(IndicadoresApi::class.java)
+    }
 }

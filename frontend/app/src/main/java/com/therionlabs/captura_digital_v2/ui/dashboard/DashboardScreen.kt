@@ -19,6 +19,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import java.text.NumberFormat
+import java.util.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.therionlabs.captura_digital_v2.ui.auth.DuocAmarillo
@@ -93,6 +95,11 @@ fun DashboardScreen(
         ) {
             SummaryCard("Encuestas", "${uiState.total}", Modifier.weight(1f))
             SummaryCard("Edad promedio", "${uiState.averageAge} años", Modifier.weight(1f))
+        }
+
+        if (uiState.uf != null) {
+            Spacer(Modifier.height(12.dp))
+            IndicadoresCard(uiState)
         }
 
         Spacer(Modifier.height(12.dp))
@@ -287,5 +294,47 @@ private fun ChartCard(
                 }
             }
         }
+    }
+}
+@Composable
+private fun IndicadoresCard(uiState: DashboardUiState) {
+    val formato = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("es-CL"))
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                "Indicadores económicos de hoy",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = DuocAzul
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                IndicadorItem("UF", uiState.uf?.let { formato.format(it) }, Modifier.weight(1f))
+                IndicadorItem("Dólar", uiState.dolar?.let { formato.format(it) }, Modifier.weight(1f))
+                IndicadorItem("UTM", uiState.utm?.let { formato.format(it) }, Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Fuente: mindicador.cl",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.Gray
+            )
+        }
+    }
+}
+
+@Composable
+private fun IndicadorItem(nombre: String, valor: String?, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Text(nombre, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+        Text(valor ?: "-", fontWeight = FontWeight.Bold, color = DuocAzul)
     }
 }

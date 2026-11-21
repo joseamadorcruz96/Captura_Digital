@@ -1,25 +1,30 @@
 package com.therionlabs.captura_digital_v2.ui.dashboard
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.UserRole
+import com.therionlabs.captura_digital_v2.data.remote.RetrofitClient
 import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
 import com.therionlabs.captura_digital_v2.data.repository.ProspectoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import java.util.Calendar
 
 class DashboardViewModel : ViewModel() {
 
     private val prospectoRepository = ProspectoRepository()
     private val authRepository = AuthRepository()
+    private val indicadoresApi = RetrofitClient.indicadoresApi
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
     init {
         load()
+        cargarIndicadores()
     }
 
     private fun load() {
@@ -52,7 +57,7 @@ class DashboardViewModel : ViewModel() {
             .sortedByDescending { it.second }
             .toMap()
 
-        _uiState.value = DashboardUiState(
+        _uiState.value = _uiState.value.copy(
             isAdmin = user.role == UserRole.ADMINISTRATIVO,
             total = prospectos.size,
             averageAge = if (ages.isEmpty()) 0 else ages.average().toInt(),
@@ -60,6 +65,20 @@ class DashboardViewModel : ViewModel() {
             byAge = byAge,
             byInterest = byInterest
         )
+    }
+
+    private fun cargarIndicadores() {
+        viewModelScope.launch {
+            try {
+                val indicadores = indicadoresApi.obtener()
+                _uiState.value = _uiState.value.copy(
+                    uf = indicadores.uf.valor,
+                    dolar = indicadores.dolar.valor,
+                    utm = indicadores.utm.valor
+                )
+            } catch (e: Exception) {
+            }
+        }
     }
 
     fun shareText(): String {

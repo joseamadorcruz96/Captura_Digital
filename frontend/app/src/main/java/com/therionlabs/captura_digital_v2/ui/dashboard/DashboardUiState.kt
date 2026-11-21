@@ -6,5 +6,8 @@ data class DashboardUiState(
     val averageAge: Int = 0,
     val byGender: Map<String, Int> = emptyMap(),
     val byAge: Map<String, Int> = emptyMap(),
-    val byInterest: Map<String, Int> = emptyMap()
+    val byInterest: Map<String, Int> = emptyMap(),
+    val uf: Double? = null,
+    val dolar: Double? = null,
+    val utm: Double? = null
 )

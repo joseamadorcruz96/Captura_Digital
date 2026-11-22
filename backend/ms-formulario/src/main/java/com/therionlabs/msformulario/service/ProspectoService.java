@@ -90,6 +90,7 @@ public class ProspectoService {
     public BatchSyncResponseDto sincronizarLote(BatchSyncRequestDto batch) {
         List<String> exitosos = new ArrayList<>();
         List<String> fallidos = new ArrayList<>();
+        Map<String, String> erroresPorUuid = new LinkedHashMap<>();
 
         for (ProspectoRequestDto item : batch.prospectos()) {
             String itemUuid = (item != null && item.clientUuid() != null) ? item.clientUuid() : "SIN_UUID";
@@ -99,6 +100,7 @@ public class ProspectoService {
             } catch (Exception ex) {
                 log.warn("Fallo parcial sincronizando prospecto {}: {}", itemUuid, ex.getMessage());
                 fallidos.add(itemUuid);
+                erroresPorUuid.put(itemUuid, ex.getMessage() != null ? ex.getMessage() : "Error desconocido");
             }
         }
 
@@ -106,7 +108,7 @@ public class ProspectoService {
                 ? "Sincronización completada exitosamente."
                 : "Sincronización parcial: " + exitosos.size() + " exitosos, " + fallidos.size() + " fallidos.";
 
-        return new BatchSyncResponseDto(batch.prospectos().size(), exitosos, fallidos, mensaje);
+        return new BatchSyncResponseDto(batch.prospectos().size(), exitosos, fallidos, mensaje, erroresPorUuid);
     }
 
     @Transactional(readOnly = true)

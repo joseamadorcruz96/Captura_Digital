@@ -3,6 +3,7 @@ package com.therionlabs.captura_digital_v2.ui.inicio
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
+import com.therionlabs.captura_digital_v2.data.model.UserRole
 import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
 import com.therionlabs.captura_digital_v2.data.repository.IProspectoRepository
 import com.therionlabs.captura_digital_v2.data.repository.ProspectoRepository
@@ -23,12 +24,16 @@ class InicioViewModel(
         viewModelScope.launch {
             prospectoRepository.observeProspectos().collect { prospectos ->
                 val currentUser = authRepository.getCurrentUser()
-                val captures = prospectos.filter { it.captadorId == currentUser.id }
+                val capturedCount = if (currentUser.role == UserRole.ADMINISTRATIVO) {
+                    prospectos.size
+                } else {
+                    prospectos.count { it.captadorId == currentUser.id }
+                }
                 val pending = prospectos.count { it.syncStatus != SyncStatus.SYNCED }
 
                 _uiState.value = _uiState.value.copy(
                     user = currentUser,
-                    totalCapturedToday = captures.size,
+                    totalCapturedToday = capturedCount,
                     pendingSyncCount = pending
                 )
             }

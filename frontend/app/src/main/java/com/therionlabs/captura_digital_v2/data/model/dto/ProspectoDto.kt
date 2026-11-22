@@ -80,7 +80,8 @@ data class BatchSyncResponseDto(
     val totalProcesados: Int,
     val exitososUuids: List<String>,
     val fallidosUuids: List<String>,
-    val mensaje: String
+    val mensaje: String,
+    val erroresPorUuid: Map<String, String>? = null
 )
 
 data class EventoResponseDto(

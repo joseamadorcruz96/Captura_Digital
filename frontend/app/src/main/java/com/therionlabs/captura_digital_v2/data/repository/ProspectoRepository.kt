@@ -23,6 +23,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import retrofit2.HttpException
+import java.io.IOException
 
 data class SyncResult(
     val totalEnviados: Int,
@@ -146,6 +148,17 @@ class ProspectoRepository(
     }
 
     override fun guardarProspecto(prospecto: Prospecto): Boolean {
+        upsertInMemory(prospecto)
+
+        if (dao != null) {
+            coroutineScope.launch {
+                dao.insertOrUpdate(prospecto)
+            }
+        }
+        return true
+    }
+
+    private fun upsertInMemory(prospecto: Prospecto) {
         val current = _prospectosFlow.value.toMutableList()
         val index = current.indexOfFirst { it.rut == prospecto.rut }
         if (index != -1) {
@@ -155,11 +168,7 @@ class ProspectoRepository(
         }
         _prospectosFlow.value = current
 
-        if (dao != null) {
-            coroutineScope.launch {
-                dao.insertOrUpdate(prospecto)
-            }
-        } else {
+        if (dao == null) {
             val fallbackIndex = fallbackMemoryList.indexOfFirst { it.rut == prospecto.rut }
             if (fallbackIndex != -1) {
                 fallbackMemoryList[fallbackIndex] = prospecto
@@ -167,7 +176,6 @@ class ProspectoRepository(
                 fallbackMemoryList.add(0, prospecto)
             }
         }
-        return true
     }
 
     override fun getAll(): List<Prospecto> {
@@ -196,7 +204,7 @@ class ProspectoRepository(
         getAll().count { it.syncStatus != SyncStatus.SYNCED }
 
     suspend fun guardarProspectoSuspend(prospecto: Prospecto): Boolean {
-        guardarProspecto(prospecto)
+        upsertInMemory(prospecto)
         dao?.insertOrUpdate(prospecto)
         return true
     }
@@ -238,18 +246,62 @@ class ProspectoRepository(
                 syncFallbackListStatuses(exitososSet, fallidosSet)
             }
 
+            val errores = response.erroresPorUuid ?: emptyMap()
+            if (response.fallidosUuids.isNotEmpty()) {
+                val pendingById = pending.associateBy { it.id }
+                val detalles = response.fallidosUuids.mapNotNull { uuid ->
+                    val motivo = errores[uuid] ?: return@mapNotNull null
+                    val etiqueta = pendingById[uuid]?.let { "${it.nombres} (${it.rut})" } ?: uuid
+                    "$etiqueta: $motivo"
+                }
+                detalles.forEach { safeLogWarn("ProspectoSync", "Fallo parcial -> $it") }
+                val mensajeFinal = if (detalles.isNotEmpty()) {
+                    "${response.mensaje} (${detalles.joinToString("; ")})"
+                } else {
+                    response.mensaje
+                }
+                return SyncResult(
+                    totalEnviados = response.totalProcesados,
+                    exitosos = response.exitososUuids.size,
+                    fallidos = response.fallidosUuids.size,
+                    mensaje = mensajeFinal
+                )
+            }
+
             SyncResult(
                 totalEnviados = response.totalProcesados,
                 exitosos = response.exitososUuids.size,
                 fallidos = response.fallidosUuids.size,
                 mensaje = response.mensaje
             )
-        } catch (ex: Exception) {
+        } catch (ex: HttpException) {
+            safeLogError("ProspectoSync", "Error HTTP ${ex.code()} al sincronizar", ex)
+            val msg = if (ex.code() == 401 || ex.code() == 403) {
+                "Sesión expirada o sin permisos (HTTP ${ex.code()}). Vuelve a iniciar sesión."
+            } else {
+                "Error del servidor (HTTP ${ex.code()}) al sincronizar."
+            }
+            SyncResult(
+                totalEnviados = pending.size,
+                exitosos = 0,
+                fallidos = pending.size,
+                mensaje = msg
+            )
+        } catch (ex: IOException) {
+            safeLogWarn("ProspectoSync", "Error de red al sincronizar: ${ex.message}")
             SyncResult(
                 totalEnviados = pending.size,
                 exitosos = 0,
                 fallidos = pending.size,
                 mensaje = "Sin conexión con el servidor; tus datos siguen seguros localmente."
+            )
+        } catch (ex: Exception) {
+            safeLogError("ProspectoSync", "Error inesperado al sincronizar", ex)
+            SyncResult(
+                totalEnviados = pending.size,
+                exitosos = 0,
+                fallidos = pending.size,
+                mensaje = "Error al sincronizar: ${ex.message ?: "fallo inesperado"}"
             )
         }
     }
@@ -311,5 +363,13 @@ class ProspectoRepository(
                 in fallidos -> fallbackMemoryList[i] = item.copy(syncStatus = SyncStatus.SYNC_ERROR)
             }
         }
+    }
+
+    private fun safeLogWarn(tag: String, msg: String) {
+        runCatching { android.util.Log.w(tag, msg) }
+    }
+
+    private fun safeLogError(tag: String, msg: String, throwable: Throwable) {
+        runCatching { android.util.Log.e(tag, msg, throwable) }
     }
 }

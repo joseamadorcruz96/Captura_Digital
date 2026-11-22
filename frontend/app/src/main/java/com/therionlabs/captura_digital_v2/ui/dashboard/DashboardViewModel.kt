@@ -146,7 +146,12 @@ class DashboardViewModel(
     }
 
     private fun calcularEdad(fecha: String?): Int? {
-        val year = fecha?.substringAfterLast("/")?.toIntOrNull() ?: return null
+        val year = fecha
+            ?.split('/', '-')
+            ?.map { it.trim() }
+            ?.firstOrNull { it.length == 4 && it.all(Char::isDigit) }
+            ?.toIntOrNull()
+            ?: return null
         return Calendar.getInstance().get(Calendar.YEAR) - year
     }
 }

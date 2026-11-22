@@ -85,6 +85,46 @@ class ProspectoSyncItemProcessorTest {
         verifyNoInteractions(prospectoRepository);
     }
 
+    @Test
+    void procesarItemAceptaSoloCelularOSoloEmailYRechazaAmbosVacios() {
+        ProspectoRequestDto soloCelular = new ProspectoRequestDto(
+                "uuid-solo-cel", 2, "EVT-1", 1728834720000L,
+                "11.111.111-1", "Camila", "Soto", "FEMENINO", "2008-04-15",
+                "Viña del Mar", "+56987654321", "", true,
+                "CUARTO_MEDIO", null, "Colegio Alemán", "Viña del Mar",
+                "DIURNA", "Viña del Mar", "ALTO", "VOCACIONAL",
+                List.of(new CarreraPreferenciaDto(1, "Ingeniería en Informática"))
+        );
+        when(prospectoRepository.findByRut("11.111.111-1")).thenReturn(Optional.empty());
+        when(prospectoRepository.findById("uuid-solo-cel")).thenReturn(Optional.empty());
+        when(prospectoRepository.saveAndFlush(any(Prospecto.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        assertEquals("uuid-solo-cel", processor.procesarItem(soloCelular));
+
+        ProspectoRequestDto soloEmail = new ProspectoRequestDto(
+                "uuid-solo-mail", 2, "EVT-1", 1728834720000L,
+                "11.111.112-K", "Lucas", "Silva", "MASCULINO", "2008-04-15",
+                "Viña del Mar", "", "lucas@duoc.cl", true,
+                "CUARTO_MEDIO", null, "Colegio Alemán", "Viña del Mar",
+                "DIURNA", "Viña del Mar", "MEDIO", "INVERSION",
+                List.of(new CarreraPreferenciaDto(1, "Analista Programador"))
+        );
+        when(prospectoRepository.findByRut("11.111.112-K")).thenReturn(Optional.empty());
+        when(prospectoRepository.findById("uuid-solo-mail")).thenReturn(Optional.empty());
+
+        assertEquals("uuid-solo-mail", processor.procesarItem(soloEmail));
+
+        ProspectoRequestDto sinContacto = new ProspectoRequestDto(
+                "uuid-sin-contacto", 2, "EVT-1", 1728834720000L,
+                "11.111.111-1", "Ana", "Pérez", "FEMENINO", "2008-04-15",
+                "Viña del Mar", "", "   ", true,
+                "CUARTO_MEDIO", null, "Colegio Alemán", "Viña del Mar",
+                "DIURNA", "Viña del Mar", "ALTO", "VOCACIONAL",
+                List.of(new CarreraPreferenciaDto(1, "Ingeniería en Informática"))
+        );
+        assertThrows(ApiException.class, () -> processor.procesarItem(sinContacto));
+    }
+
     private ProspectoRequestDto sampleDto(String uuid, String rut) {
         return new ProspectoRequestDto(
                 uuid, 2, "EVT-1", 1728834720000L,

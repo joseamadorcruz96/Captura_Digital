@@ -72,7 +72,8 @@ class ProspectoRemoteSyncTest {
                 totalProcesados = body.prospectos.size,
                 exitososUuids = exitosos,
                 fallidosUuids = fallidos,
-                mensaje = "Sync simulado: ${exitosos.size} ok, ${fallidos.size} error"
+                mensaje = "Sync simulado: ${exitosos.size} ok, ${fallidos.size} error",
+                erroresPorUuid = fallidos.associateWith { "Motivo simulado" }
             )
         }
 
@@ -138,6 +139,7 @@ class ProspectoRemoteSyncTest {
 
         assertTrue(result.exitosos >= 1)
         assertEquals(1, result.fallidos)
+        assertTrue(result.mensaje.contains("Motivo simulado"))
         val okItem = repo.getAll().first { it.id == "uuid-ok" }
         val badItem = repo.getAll().first { it.id == "uuid-malo" }
         assertEquals(SyncStatus.SYNCED, okItem.syncStatus)

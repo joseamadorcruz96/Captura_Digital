@@ -45,8 +45,8 @@ public class ProspectoMapper {
         entity.setGenero(parseEnum(Genero.class, dto.genero(), "genero"));
         entity.setFechaNacimiento(dto.fechaNacimiento());
         entity.setComunaResidencia(dto.comunaResidencia().trim());
-        entity.setCelular(dto.celular().trim());
-        entity.setEmail(dto.email().trim().toLowerCase());
+        entity.setCelular(dto.celular() != null ? dto.celular().trim() : "");
+        entity.setEmail(dto.email() != null ? dto.email().trim().toLowerCase() : "");
         entity.setSituacionAcademica(parseEnum(SituacionAcademica.class, dto.situacionAcademica(), "situacionAcademica"));
         entity.setSituacionAcademicaOtro(dto.situacionAcademicaOtro());
         entity.setEstablecimientoEducacional(dto.establecimientoEducacional().trim());

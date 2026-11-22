@@ -49,7 +49,12 @@ public class ProspectoSyncItemProcessor {
         }
 
         String normalizedRut = RutValidator.normalize(item.rut());
+        String trimmedUuid = (item.clientUuid() != null && !item.clientUuid().isBlank())
+                ? item.clientUuid().trim()
+                : null;
+
         Prospecto entity = prospectoRepository.findByRut(normalizedRut)
+                .or(() -> trimmedUuid != null ? prospectoRepository.findById(trimmedUuid) : java.util.Optional.empty())
                 .map(existing -> {
                     mapper.updateEntity(existing, item);
                     return existing;
@@ -61,8 +66,6 @@ public class ProspectoSyncItemProcessor {
                 normalizedRut, saved.getClientUuid(), item.clientUuid());
 
         // Retorna el UUID enviado por el dispositivo solicitante para destrabar su estado PENDING_SYNC en Room
-        return (item.clientUuid() != null && !item.clientUuid().isBlank())
-                ? item.clientUuid().trim()
-                : saved.getClientUuid();
+        return trimmedUuid != null ? trimmedUuid : saved.getClientUuid();
     }
 }

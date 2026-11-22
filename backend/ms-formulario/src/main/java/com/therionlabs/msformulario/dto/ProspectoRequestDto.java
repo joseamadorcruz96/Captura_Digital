@@ -1,5 +1,6 @@
 package com.therionlabs.msformulario.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
@@ -39,10 +40,8 @@ public record ProspectoRequestDto(
         @NotBlank(message = "La comuna de residencia es obligatoria")
         String comunaResidencia,
 
-        @NotBlank(message = "El celular es obligatorio")
         String celular,
 
-        @NotBlank(message = "El correo electrónico es obligatorio")
         @Email(message = "Formato de correo electrónico inválido")
         String email,
 
@@ -75,4 +74,15 @@ public record ProspectoRequestDto(
         @NotEmpty(message = "Debe seleccionar al menos una carrera de interés")
         @Size(max = 3, message = "Se permiten como máximo 3 prioridades de carrera")
         List<@Valid CarreraPreferenciaDto> carreras
-) {}
+) {
+    /**
+     * Alineado con FormularioValidator.validarContacto de Android: exige celular o correo.
+     */
+    @JsonIgnore
+    @AssertTrue(message = "Debe ingresar al menos un canal de contacto (celular o correo electrónico)")
+    public boolean isContactoValido() {
+        boolean tieneCelular = celular != null && !celular.isBlank();
+        boolean tieneEmail = email != null && !email.isBlank();
+        return tieneCelular || tieneEmail;
+    }
+}

@@ -43,6 +43,7 @@ import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
 import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
+import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
 import com.therionlabs.captura_digital_v2.ui.components.DuocButton
 import com.therionlabs.captura_digital_v2.ui.components.DuocHeader
 import com.therionlabs.captura_digital_v2.ui.components.DuocOutlinedButton
@@ -58,7 +59,7 @@ import com.therionlabs.captura_digital_v2.ui.theme.Captura_Digital_v2Theme
 @Composable
 fun StepFormRoute(
     viewModel: StepFormViewModel = viewModel(),
-    captadorId: Int = 2,
+    captadorId: Int = AuthRepository().getCurrentUser().id,
     eventoId: String? = "EVT-DUOC-2026",
     onBack: () -> Unit
 ) {

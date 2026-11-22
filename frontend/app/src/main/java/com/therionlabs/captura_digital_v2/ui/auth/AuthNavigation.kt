@@ -12,6 +12,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.therionlabs.captura_digital_v2.ui.components.OfflineStatusBanner
+import com.therionlabs.captura_digital_v2.ui.components.rememberIsOnline
 import com.therionlabs.captura_digital_v2.ui.dashboard.DashboardRoute
 import com.therionlabs.captura_digital_v2.ui.formularioModal.StepFormRoute
 import com.therionlabs.captura_digital_v2.ui.help.HelpScreen
@@ -21,8 +23,14 @@ import com.therionlabs.captura_digital_v2.ui.usuarios.UsuariosRoute
 @Composable
 fun AuthNavigation(onLoginSuccess: () -> Unit) {
     val navController = rememberNavController()
+    val isOnline = rememberIsOnline()
 
-    NavHost(navController = navController, startDestination = "login") {
+    Column(modifier = Modifier.fillMaxSize()) {
+        NavHost(
+            navController = navController,
+            startDestination = "login",
+            modifier = Modifier.weight(1f)
+        ) {
 
         composable("login") {
             LoginRoute(
@@ -73,5 +81,7 @@ fun AuthNavigation(onLoginSuccess: () -> Unit) {
         composable("usuarios") {
             UsuariosRoute(onBack = { navController.popBackStack() })
         }
+        }
+        OfflineStatusBanner(isOnline = isOnline)
     }
 }

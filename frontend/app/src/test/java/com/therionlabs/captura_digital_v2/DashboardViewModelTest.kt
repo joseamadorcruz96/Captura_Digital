@@ -32,11 +32,19 @@ class DashboardViewModelTest {
     private val authRepository = AuthRepository(authApi)
     private val anioActual = Calendar.getInstance().get(Calendar.YEAR)
 
-    private class FakeProspectoRepository(private val prospectos: List<Prospecto>) : IProspectoRepository {
+    private class FakeProspectoRepository(initial: List<Prospecto>) : IProspectoRepository {
+        private val store = initial.toMutableList()
         override fun guardarProspecto(prospecto: Prospecto) = true
-        override fun getAll() = prospectos
-        override fun getByCaptador(captadorId: Int) = prospectos.filter { it.captadorId == captadorId }
+        override fun getAll() = store.toList()
+        override fun getByCaptador(captadorId: Int) = store.filter { it.captadorId == captadorId }
         override fun getPendingSyncCount() = 0
+        override suspend fun actualizarProspecto(prospecto: Prospecto): Boolean {
+            val idx = store.indexOfFirst { it.id == prospecto.id }
+            if (idx != -1) store[idx] = prospecto
+            return idx != -1
+        }
+        override suspend fun eliminarProspecto(clientUuid: String): Boolean =
+            store.removeAll { it.id == clientUuid }
     }
 
     private class FakeIndicadoresApi(private val falla: Boolean = false) : IndicadoresApi {
@@ -159,5 +167,18 @@ class DashboardViewModelTest {
         assertTrue(texto.contains("Encuestas: 2"))
         assertTrue(texto.contains("Género:"))
         assertTrue(texto.contains("Carreras de interés:"))
+    }
+
+    @Test
+    fun rotarNivelInteresYEliminar_actualizanDashboardEnTiempoReal() = runTest {
+        val vm = crearViewModel()
+        val primero = vm.uiState.value.prospectos.first()
+        assertEquals(NivelInteres.ALTO, primero.nivelInteres)
+
+        vm.rotarNivelInteres(primero)
+        assertEquals(NivelInteres.MEDIO, vm.uiState.value.prospectos.first().nivelInteres)
+
+        vm.eliminarProspecto(primero.id)
+        assertEquals(1, vm.uiState.value.total)
     }
 }

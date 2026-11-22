@@ -1,6 +1,7 @@
 package com.therionlabs.captura_digital_v2.ui.formularioModal
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
  * ViewModel para el formulario modal Stepper de captura de prospectos.
@@ -360,16 +362,34 @@ class StepFormViewModel(
             syncStatus = SyncStatus.PENDING_SYNC
         )
 
-        repository.guardarProspecto(prospecto)
-
         _uiState.value = validatedState.copy(
             stepStatuses = updatedStatuses,
             generalErrorMessage = null,
-            isSaving = false,
-            saveSuccess = true,
-            savedProspectoNombre = prospecto.nombreCompleto,
-            savedProspectoRut = prospecto.rut
+            isSaving = true
         )
+
+        viewModelScope.launch {
+            repository.guardarProspectoSuspend(prospecto)
+            val syncResult = repository.sincronizarNuevosPendientes(
+                captadorId = captadorId,
+                eventoId = eventoId
+            )
+            val finalStatus = if (syncResult.exitosos > 0 && syncResult.fallidos == 0) {
+                SyncStatus.SYNCED
+            } else {
+                SyncStatus.PENDING_SYNC
+            }
+
+            _uiState.update { state ->
+                state.copy(
+                    isSaving = false,
+                    saveSuccess = true,
+                    savedProspectoNombre = prospecto.nombreCompleto,
+                    savedProspectoRut = prospecto.rut,
+                    savedSyncStatus = finalStatus
+                )
+            }
+        }
     }
 
     fun resetFormulario() {

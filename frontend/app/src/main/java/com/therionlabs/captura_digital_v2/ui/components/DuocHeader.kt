@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -39,8 +40,11 @@ fun DuocHeader(
     subtitle: String? = null,
     onBack: (() -> Unit)? = null,
     backText: String = "← Volver",
+    showConnectivityStatus: Boolean = true,
     trailingAction: (@Composable () -> Unit)? = null
 ) {
+    val isOnline = if (showConnectivityStatus) rememberIsOnline() else true
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -48,7 +52,7 @@ fun DuocHeader(
             .statusBarsPadding()
             .padding(24.dp)
     ) {
-        if (onBack != null || trailingAction != null) {
+        if (onBack != null || trailingAction != null || showConnectivityStatus) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -65,7 +69,15 @@ fun DuocHeader(
                     Spacer(Modifier.height(1.dp))
                 }
 
-                trailingAction?.invoke()
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (showConnectivityStatus) {
+                        ConnectivityBadge(isOnline = isOnline)
+                    }
+                    if (trailingAction != null) {
+                        if (showConnectivityStatus) Spacer(Modifier.width(8.dp))
+                        trailingAction.invoke()
+                    }
+                }
             }
             Spacer(Modifier.height(8.dp))
         }

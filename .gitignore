@@ -20,3 +20,6 @@ guia_estudio/
 .kotlin
 .vscode/
 .vscode
+.env
+.env.*
+!.env.example

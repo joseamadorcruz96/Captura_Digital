@@ -5,10 +5,14 @@ import com.therionlabs.captura_digital_v2.data.model.UserRole
 
 data class InicioUiState(
     val user: User? = null,
+    val activeEventId: String = "EVT-DUOC-2026",
     val activeEventName: String = "Feria Vocacional Duoc UC 2026",
     val pendingSyncCount: Int = 0,
-    val totalCapturedToday: Int = 10,
-    val isOnline: Boolean = true
+    val syncErrorCount: Int = 0,
+    val totalCapturedToday: Int = 0,
+    val isOnline: Boolean = true,
+    val isSyncing: Boolean = false,
+    val syncMessage: String? = null
 ) {
     val isCaptador: Boolean
         get() = user?.role == UserRole.CAPTADOR

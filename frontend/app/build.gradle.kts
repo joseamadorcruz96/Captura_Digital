@@ -1,8 +1,22 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
 }
+
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+val gatewayUrlDebug: String =
+    (project.findProperty("GATEWAY_BASE_URL") as String?)
+        ?: localProps.getProperty("GATEWAY_BASE_URL")
+        ?: "http://100.61.210.112:8080/"
+val gatewayUrlRelease: String =
+    (project.findProperty("GATEWAY_BASE_URL_RELEASE") as String?)
+        ?: "http://100.61.210.112:8080/"
 
 android {
     namespace = "com.therionlabs.captura_digital_v2"
@@ -23,8 +37,10 @@ android {
     buildTypes {
         debug {
             enableUnitTestCoverage = true
+            buildConfigField("String", "GATEWAY_BASE_URL", "\"$gatewayUrlDebug\"")
         }
         release {
+            buildConfigField("String", "GATEWAY_BASE_URL", "\"$gatewayUrlRelease\"")
             optimization {
                 enable = false
             }
@@ -36,6 +52,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

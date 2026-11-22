@@ -46,6 +46,7 @@ fun InicioRoute(
         onNewCapture = onNewCapture,
         onDashboard = onDashboard,
         onHelp = onHelp,
+        onSync = viewModel::sincronizarAhora,
         onLogout = {
             viewModel.logout()
             onLogout()
@@ -59,6 +60,7 @@ fun InicioScreen(
     onNewCapture: () -> Unit,
     onDashboard: () -> Unit,
     onHelp: () -> Unit,
+    onSync: () -> Unit = {},
     onLogout: () -> Unit
 ) {
     val userName = uiState.user?.name ?: "Usuario"
@@ -224,6 +226,52 @@ fun InicioScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
+                }
+            }
+
+            // Botón de Sincronización Offline-First hacia Gateway -> ms-formulario
+            DuocCard(elevation = 2.dp, contentPadding = 14.dp) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Sincronización Remota",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = DuocAzul
+                        )
+                        Text(
+                            text = uiState.syncMessage ?: if (uiState.pendingSyncCount > 0) {
+                                "${uiState.pendingSyncCount} registro(s) listos para enviar al servidor"
+                            } else {
+                                "Sin registros pendientes por subir"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.DarkGray
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Button(
+                        onClick = onSync,
+                        enabled = !uiState.isSyncing,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = DuocAzul,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        if (uiState.isSyncing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = Color.White
+                            )
+                        } else {
+                            Text("Sincronizar")
+                        }
+                    }
                 }
             }
 

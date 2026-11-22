@@ -23,6 +23,8 @@ import java.text.NumberFormat
 import java.util.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.therionlabs.captura_digital_v2.data.model.Prospecto
+import com.therionlabs.captura_digital_v2.data.model.SyncStatus
 import com.therionlabs.captura_digital_v2.ui.auth.DuocAmarillo
 import com.therionlabs.captura_digital_v2.ui.auth.DuocAzul
 import com.therionlabs.captura_digital_v2.ui.auth.DuocAzulMedio
@@ -50,6 +52,8 @@ fun DashboardRoute(
         uiState = uiState,
         onBack = onBack,
         onUsuarios = onUsuarios,
+        onRotarInteres = viewModel::rotarNivelInteres,
+        onEliminarProspecto = viewModel::eliminarProspecto,
         onShare = {
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
@@ -65,6 +69,8 @@ fun DashboardScreen(
     uiState: DashboardUiState,
     onBack: () -> Unit,
     onUsuarios: () -> Unit,
+    onRotarInteres: (Prospecto) -> Unit = {},
+    onEliminarProspecto: (String) -> Unit = {},
     onShare: () -> Unit
 ) {
     var started by remember { mutableStateOf(false) }
@@ -139,6 +145,14 @@ fun DashboardScreen(
         PieChartCard("Género", uiState.byGender, progress)
         PieChartCard("Rango de edad", uiState.byAge, progress)
         ChartCard("Intereses", uiState.byInterest, uiState.total, DuocAmarillo, progress)
+
+        Spacer(Modifier.height(12.dp))
+        ProspectosCrudCard(
+            prospectos = uiState.prospectos,
+            actionMessage = uiState.actionMessage,
+            onRotarInteres = onRotarInteres,
+            onEliminarProspecto = onEliminarProspecto
+        )
 
         Spacer(Modifier.height(24.dp))
     }
@@ -336,5 +350,93 @@ private fun IndicadorItem(nombre: String, valor: String?, modifier: Modifier = M
     Column(modifier = modifier) {
         Text(nombre, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
         Text(valor ?: "-", fontWeight = FontWeight.Bold, color = DuocAzul)
+    }
+}
+
+@Composable
+private fun ProspectosCrudCard(
+    prospectos: List<Prospecto>,
+    actionMessage: String?,
+    onRotarInteres: (Prospecto) -> Unit,
+    onEliminarProspecto: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Registros recientes (CRUD)",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = DuocAzul
+            )
+            if (actionMessage != null) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = actionMessage,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = DuocAzulMedio,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+
+            if (prospectos.isEmpty()) {
+                Text("No hay prospectos registrados", color = Color.Gray)
+            } else {
+                prospectos.take(10).forEach { prospecto ->
+                    val statusColor = when (prospecto.syncStatus) {
+                        SyncStatus.SYNCED -> Color(0xFF2E7D32)
+                        SyncStatus.PENDING_SYNC -> Color(0xFFEF6C00)
+                        SyncStatus.SYNC_ERROR -> Color(0xFFC62828)
+                    }
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = prospecto.nombreCompleto,
+                                    fontWeight = FontWeight.Bold,
+                                    color = DuocAzul
+                                )
+                                Text(
+                                    text = "${prospecto.rut} · ${prospecto.carreraPrioridad1}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.DarkGray
+                                )
+                            }
+                            Text(
+                                text = prospecto.syncStatus.displayName,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = statusColor,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(onClick = { onRotarInteres(prospecto) }) {
+                                Text("Interés: ${prospecto.nivelInteres.displayName}")
+                            }
+                            TextButton(onClick = { onEliminarProspecto(prospecto.id) }) {
+                                Text("Eliminar", color = Color(0xFFC62828))
+                            }
+                        }
+                        HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+                    }
+                }
+            }
+        }
     }
 }

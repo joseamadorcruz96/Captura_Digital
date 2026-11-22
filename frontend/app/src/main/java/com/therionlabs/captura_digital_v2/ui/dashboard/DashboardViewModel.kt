@@ -3,6 +3,8 @@ package com.therionlabs.captura_digital_v2.ui.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.therionlabs.captura_digital_v2.data.model.Genero
+import com.therionlabs.captura_digital_v2.data.model.NivelInteres
+import com.therionlabs.captura_digital_v2.data.model.Prospecto
 import com.therionlabs.captura_digital_v2.data.model.UserRole
 import com.therionlabs.captura_digital_v2.data.remote.IndicadoresApi
 import com.therionlabs.captura_digital_v2.data.remote.RetrofitClient
@@ -26,6 +28,7 @@ class DashboardViewModel(
 
     init {
         load()
+        refrescarRemoto()
         cargarIndicadores()
     }
 
@@ -65,8 +68,48 @@ class DashboardViewModel(
             averageAge = if (ages.isEmpty()) 0 else ages.average().toInt(),
             byGender = byGender,
             byAge = byAge,
-            byInterest = byInterest
+            byInterest = byInterest,
+            prospectos = prospectos
         )
+    }
+
+    private fun refrescarRemoto() {
+        val user = authRepository.getCurrentUser()
+        val filtroCaptador = if (user.role == UserRole.ADMINISTRATIVO) null else user.id
+        viewModelScope.launch {
+            if (prospectoRepository.refrescarDesdeServidor(filtroCaptador)) {
+                load()
+            }
+        }
+    }
+
+    fun rotarNivelInteres(prospecto: Prospecto) {
+        val siguiente = when (prospecto.nivelInteres) {
+            NivelInteres.ALTO -> NivelInteres.MEDIO
+            NivelInteres.MEDIO -> NivelInteres.BAJO
+            NivelInteres.BAJO -> NivelInteres.ALTO
+        }
+        viewModelScope.launch {
+            val ok = prospectoRepository.actualizarProspecto(prospecto.copy(nivelInteres = siguiente))
+            load()
+            _uiState.value = _uiState.value.copy(
+                actionMessage = if (ok) {
+                    "Actualizado ${prospecto.nombres} a ${siguiente.displayName}"
+                } else {
+                    "No se pudo actualizar el prospecto"
+                }
+            )
+        }
+    }
+
+    fun eliminarProspecto(clientUuid: String) {
+        viewModelScope.launch {
+            val ok = prospectoRepository.eliminarProspecto(clientUuid)
+            load()
+            _uiState.value = _uiState.value.copy(
+                actionMessage = if (ok) "Prospecto eliminado" else "No se pudo eliminar"
+            )
+        }
     }
 
     private fun cargarIndicadores() {
@@ -78,7 +121,7 @@ class DashboardViewModel(
                     dolar = indicadores.dolar.valor,
                     utm = indicadores.utm.valor
                 )
-            } catch (e: Exception) {
+            } catch (_: Exception) {
             }
         }
     }

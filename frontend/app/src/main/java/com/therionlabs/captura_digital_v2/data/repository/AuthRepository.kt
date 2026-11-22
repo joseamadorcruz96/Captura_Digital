@@ -14,8 +14,6 @@ class AuthRepository(
 
     companion object {
         private var currentUser: User? = null
-
-        fun currentSessionUser(): User? = currentUser
     }
 
     suspend fun login(email: String, pass: String): User? {

@@ -6,15 +6,20 @@ import com.therionlabs.msformulario.dto.EventoRequestDto;
 import com.therionlabs.msformulario.dto.ProspectoRequestDto;
 import com.therionlabs.msformulario.repository.EventoRepository;
 import com.therionlabs.msformulario.repository.ProspectoRepository;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.List;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -42,6 +47,9 @@ class ProspectoControllerTest {
     @Autowired
     private EventoRepository eventoRepository;
 
+    @Value("${jwt.secret}")
+    private String jwtSecret;
+
     @BeforeEach
     void cleanDb() {
         prospectoRepository.deleteAll();
@@ -49,34 +57,42 @@ class ProspectoControllerTest {
     }
 
     @Test
-    void endpointsProtegidosRechazanSinCredencialesYPorRolInsuficiente() throws Exception {
+    void endpointsProtegidosRechazanSinTokenTokenInvalidoYRolInsuficiente() throws Exception {
         mockMvc.perform(get("/api/v1/prospectos"))
                 .andExpect(status().isUnauthorized());
 
+        String tokenFirmaFalsa = signToken("atacante@evil.cl", "ADMINISTRATIVO",
+                "otra-clave-secreta-distinta-de-32-bytes!");
         mockMvc.perform(get("/api/v1/prospectos")
-                        .header("X-User-Id", "99")
-                        .header("X-User-Rol", "PROSPECTO"))
+                        .header("Authorization", "Bearer " + tokenFirmaFalsa))
+                .andExpect(status().isUnauthorized());
+
+        String tokenProspecto = signToken("postulante@duoc.cl", "PROSPECTO", jwtSecret);
+        mockMvc.perform(get("/api/v1/prospectos")
+                        .header("Authorization", "Bearer " + tokenProspecto))
                 .andExpect(status().isForbidden());
 
         EventoRequestDto evento = new EventoRequestDto(
                 "EVT-TEST", "Feria Duoc", "Liceo A", "Viña del Mar", "Viña del Mar", "2026-11-22", true);
 
+        String tokenCaptador = signToken("captador@captura.cl", "CAPTADOR", jwtSecret);
         mockMvc.perform(post("/api/v1/eventos")
-                        .header("X-User-Id", "2")
-                        .header("X-User-Rol", "CAPTADOR")
+                        .header("Authorization", "Bearer " + tokenCaptador)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(evento)))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    void flujoCompletoCrudYBatchSyncFuncionaConRolesValidos() throws Exception {
+    void flujoCompletoCrudYBatchSyncFuncionaConJwtValido() throws Exception {
+        String adminToken = signToken("admin@captura.cl", "ADMINISTRATIVO", jwtSecret);
+        String captadorToken = signToken("captador@captura.cl", "CAPTADOR", jwtSecret);
+
         EventoRequestDto evento = new EventoRequestDto(
                 "EVT-TEST", "Feria Duoc", "Liceo A", "Viña del Mar", "Viña del Mar", "2026-11-22", true);
 
         mockMvc.perform(post("/api/v1/eventos")
-                        .header("X-User-Id", "1")
-                        .header("X-User-Rol", "ADMINISTRATIVO")
+                        .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(evento)))
                 .andExpect(status().isCreated())
@@ -85,31 +101,25 @@ class ProspectoControllerTest {
         ProspectoRequestDto p1 = sampleDto("uuid-p1", "111111111", "c1@gmail.com");
 
         mockMvc.perform(post("/api/v1/prospectos")
-                        .header("X-User-Id", "2")
-                        .header("X-User-Rol", "CAPTADOR")
+                        .header("Authorization", "Bearer " + captadorToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(p1)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.rut").value("11.111.111-1"));
 
-        // Duplicado en POST unitario debe responder 409
         mockMvc.perform(post("/api/v1/prospectos")
-                        .header("X-User-Id", "2")
-                        .header("X-User-Rol", "CAPTADOR")
+                        .header("Authorization", "Bearer " + captadorToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(sampleDto("uuid-otro", "11.111.111-1", "c2@gmail.com"))))
                 .andExpect(status().isConflict());
 
-        // Actualizar por clientUuid
         mockMvc.perform(put("/api/v1/prospectos/uuid-p1")
-                        .header("X-User-Id", "2")
-                        .header("X-User-Rol", "CAPTADOR")
+                        .header("Authorization", "Bearer " + captadorToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(sampleDto("uuid-p1", "11.111.111-1", "actualizado@gmail.com"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("actualizado@gmail.com"));
 
-        // Batch Sync parcial: 1 upsert (p1 con otro uuid) + 1 nuevo válido + 1 inválido
         BatchSyncRequestDto syncBatch = new BatchSyncRequestDto(
                 2,
                 "EVT-TEST",
@@ -121,8 +131,7 @@ class ProspectoControllerTest {
         );
 
         mockMvc.perform(post("/api/v1/prospectos/sync")
-                        .header("X-User-Id", "2")
-                        .header("X-User-Rol", "CAPTADOR")
+                        .header("Authorization", "Bearer " + captadorToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(syncBatch)))
                 .andExpect(status().isOk())
@@ -131,18 +140,25 @@ class ProspectoControllerTest {
                 .andExpect(jsonPath("$.fallidosUuids", hasSize(1)))
                 .andExpect(jsonPath("$.fallidosUuids[0]").value("uuid-malo"));
 
-        // Resumen Dashboard
         mockMvc.perform(get("/api/v1/prospectos/resumen")
-                        .header("X-User-Id", "1")
-                        .header("X-User-Rol", "ADMINISTRATIVO"))
+                        .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalProspectos").value(2));
 
-        // Eliminar
         mockMvc.perform(delete("/api/v1/prospectos/uuid-p2")
-                        .header("X-User-Id", "2")
-                        .header("X-User-Rol", "CAPTADOR"))
+                        .header("Authorization", "Bearer " + captadorToken))
                 .andExpect(status().isNoContent());
+    }
+
+    private String signToken(String email, String rol, String secret) {
+        Date now = new Date();
+        return Jwts.builder()
+                .subject(email)
+                .claim("rol", rol)
+                .issuedAt(now)
+                .expiration(new Date(now.getTime() + 3600_000L))
+                .signWith(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)))
+                .compact();
     }
 
     private ProspectoRequestDto sampleDto(String uuid, String rut, String email) {

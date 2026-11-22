@@ -1,6 +1,6 @@
 package com.therionlabs.captura_digital_v2.data.remote
 
-import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
+import com.therionlabs.captura_digital_v2.BuildConfig
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -9,12 +9,11 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
 
     /**
-     * URL única del API Gateway:
-     * - Emulador Android contra PC local: "http://10.0.2.2:8080/"
-     * - Teléfono físico por USB (adb reverse tcp:8080 tcp:8080): "http://127.0.0.1:8080/"
-     * - AWS EC2 / Red local: reemplazar por la URL o IP pública del Gateway.
+     * Lee GATEWAY_BASE_URL desde BuildConfig:
+     * - Por defecto apunta a la EC2 del equipo en puerto 8080 (Gateway).
+     * - En desarrollo local con emulador se sobreescribe en frontend/local.properties (gitignored).
      */
-    private const val GATEWAY_BASE_URL = "http://10.0.2.2:8080/"
+    private val GATEWAY_BASE_URL: String = BuildConfig.GATEWAY_BASE_URL
 
     var token: String? = null
 
@@ -25,12 +24,6 @@ object RetrofitClient {
             .addInterceptor { chain ->
                 val requestBuilder = chain.request().newBuilder()
                 token?.let { requestBuilder.header("Authorization", "Bearer $it") }
-                val user = AuthRepository.currentSessionUser()
-                if (user != null) {
-                    requestBuilder
-                        .header("X-User-Id", user.id.toString())
-                        .header("X-User-Rol", user.role.name)
-                }
                 chain.proceed(requestBuilder.build())
             }
             .build()

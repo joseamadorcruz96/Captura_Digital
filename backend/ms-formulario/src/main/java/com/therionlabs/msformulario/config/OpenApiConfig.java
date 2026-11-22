@@ -13,22 +13,17 @@ public class OpenApiConfig {
 
     @Bean
     public OpenAPI msFormularioOpenAPI() {
+        final String schemeName = "bearerAuth";
         return new OpenAPI()
                 .info(new Info()
                         .title("MS Formulario - Captura Digital API")
                         .version("v1")
                         .description("Gestión de prospectos, eventos y sincronización Offline-First."))
                 .components(new Components()
-                        .addSecuritySchemes("X-User-Id", new SecurityScheme()
-                                .type(SecurityScheme.Type.APIKEY)
-                                .in(SecurityScheme.In.HEADER)
-                                .name("X-User-Id"))
-                        .addSecuritySchemes("X-User-Rol", new SecurityScheme()
-                                .type(SecurityScheme.Type.APIKEY)
-                                .in(SecurityScheme.In.HEADER)
-                                .name("X-User-Rol")))
-                .addSecurityItem(new SecurityRequirement()
-                        .addList("X-User-Id")
-                        .addList("X-User-Rol"));
+                        .addSecuritySchemes(schemeName, new SecurityScheme()
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")))
+                .addSecurityItem(new SecurityRequirement().addList(schemeName));
     }
 }

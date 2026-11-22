@@ -18,14 +18,14 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Configuración de Spring Security stateless con control de acceso basado en roles.
+ * Configuración de Spring Security stateless validando tokens Bearer JWT emitidos por ms-login.
  */
 @Configuration
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final HeaderContextAuthFilter headerContextAuthFilter;
+    private final JwtAuthFilter jwtAuthFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -36,7 +36,7 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, authEx) ->
                                 writeJsonError(res, HttpServletResponse.SC_UNAUTHORIZED,
-                                        "No autenticado: faltan cabeceras X-User-Id y X-User-Rol"))
+                                        "No autenticado: token JWT ausente o inválido"))
                         .accessDeniedHandler((req, res, deniedEx) ->
                                 writeJsonError(res, HttpServletResponse.SC_FORBIDDEN,
                                         "Acceso denegado: tu rol no tiene permisos para esta operación"))
@@ -54,7 +54,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/prospectos/**").hasAnyRole("CAPTADOR", "ADMINISTRATIVO")
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(headerContextAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 

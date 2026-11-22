@@ -2,6 +2,7 @@ package com.therionlabs.captura_digital_v2
 
 import com.therionlabs.captura_digital_v2.data.remote.AuthApi
 import com.therionlabs.captura_digital_v2.data.remote.LoginBody
+import com.therionlabs.captura_digital_v2.data.remote.LoginResponse
 import com.therionlabs.captura_digital_v2.data.remote.RecuperarBody
 import com.therionlabs.captura_digital_v2.data.remote.UsuarioBody
 import com.therionlabs.captura_digital_v2.data.remote.UsuarioDto
@@ -27,10 +28,11 @@ class FakeAuthApi : AuthApi {
 
     private fun http(codigo: Int) = HttpException(Response.error<Any>(codigo, "".toResponseBody(null)))
 
-    override suspend fun login(body: LoginBody): UsuarioDto {
+    override suspend fun login(body: LoginBody): LoginResponse {
         revisar()
-        return usuarios.firstOrNull { it.email == body.email && body.password == password }
+        val usuario = usuarios.firstOrNull { it.email == body.email && body.password == password }
             ?: throw http(401)
+        return LoginResponse("token-de-prueba", usuario)
     }
 
     override suspend fun recuperar(body: RecuperarBody) {

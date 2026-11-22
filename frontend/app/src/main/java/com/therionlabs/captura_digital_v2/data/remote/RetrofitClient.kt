@@ -16,13 +16,16 @@ object RetrofitClient {
      */
     private const val GATEWAY_BASE_URL = "http://10.0.2.2:8080/"
 
+    var token: String? = null
+
     private val gatewayHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
             .addInterceptor { chain ->
-                val user = AuthRepository.currentSessionUser()
                 val requestBuilder = chain.request().newBuilder()
+                token?.let { requestBuilder.header("Authorization", "Bearer $it") }
+                val user = AuthRepository.currentSessionUser()
                 if (user != null) {
                     requestBuilder
                         .header("X-User-Id", user.id.toString())

@@ -20,8 +20,10 @@ class AuthRepository(
 
     suspend fun login(email: String, pass: String): User? {
         return try {
-            val dto = api.login(LoginBody(email, pass))
+            val respuesta = api.login(LoginBody(email, pass))
+            val dto = respuesta.usuario
             val user = User(dto.id, dto.nombre, dto.email, UserRole.valueOf(dto.rol))
+            RetrofitClient.token = respuesta.token
             currentUser = user
             user
         } catch (e: HttpException) {
@@ -43,6 +45,7 @@ class AuthRepository(
     }
 
     fun logout() {
+        RetrofitClient.token = null
         currentUser = null
     }
 }

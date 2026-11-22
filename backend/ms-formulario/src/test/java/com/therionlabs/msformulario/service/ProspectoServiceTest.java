@@ -130,6 +130,160 @@ class ProspectoServiceTest {
         assertEquals(5L, resumen.conteoPorJornada().get("DIURNA"));
     }
 
+    @Test
+    void listarNormalizaFiltrosYDevuelveResultados() {
+        Prospecto p = Prospecto.builder()
+                .clientUuid("uuid-1")
+                .captadorId(2)
+                .eventoId("EVT-1")
+                .rut("11.111.111-1")
+                .nombres("Camila")
+                .apellidos("Valenzuela")
+                .genero(Genero.FEMENINO)
+                .situacionAcademica(SituacionAcademica.CUARTO_MEDIO)
+                .jornadaPreferencia(Jornada.DIURNA)
+                .nivelInteres(NivelInteres.ALTO)
+                .perfilMotivacional(PerfilMotivacional.VOCACIONAL)
+                .build();
+
+        when(prospectoRepository.findFiltered(2, "EVT-1", "11.111.111-1", "Viña del Mar"))
+                .thenReturn(List.of(p));
+        when(prospectoRepository.findFiltered(null, null, null, null))
+                .thenReturn(List.of());
+
+        List<ProspectoResponseDto> conFiltros = prospectoService.listar(2, " EVT-1 ", "111111111", " Viña del Mar ");
+        assertEquals(1, conFiltros.size());
+        assertEquals("uuid-1", conFiltros.get(0).clientUuid());
+
+        List<ProspectoResponseDto> sinFiltros = prospectoService.listar(null, "  ", "", null);
+        assertEquals(0, sinFiltros.size());
+    }
+
+    @Test
+    void obtenerRetornaDtoCuandoExiste() {
+        Prospecto p = Prospecto.builder()
+                .clientUuid("uuid-1")
+                .rut("11.111.111-1")
+                .genero(Genero.FEMENINO)
+                .situacionAcademica(SituacionAcademica.CUARTO_MEDIO)
+                .jornadaPreferencia(Jornada.DIURNA)
+                .nivelInteres(NivelInteres.ALTO)
+                .perfilMotivacional(PerfilMotivacional.VOCACIONAL)
+                .build();
+        when(prospectoRepository.findById("uuid-1")).thenReturn(Optional.of(p));
+
+        ProspectoResponseDto res = prospectoService.obtener("uuid-1");
+        assertEquals("uuid-1", res.clientUuid());
+    }
+
+    @Test
+    void crearValidaRutInvalidoYClientUuidDuplicadoYClientUuidVacio() {
+        ProspectoRequestDto rutMalo = sampleDto("uuid-1", "11.111.111-9");
+        ApiException exRut = assertThrows(ApiException.class, () -> prospectoService.crear(rutMalo));
+        assertEquals(HttpStatus.BAD_REQUEST, exRut.getStatus());
+
+        ProspectoRequestDto uuidDup = sampleDto(" uuid-dup ", "111111111");
+        when(prospectoRepository.existsByRut("11.111.111-1")).thenReturn(false);
+        when(prospectoRepository.existsById("uuid-dup")).thenReturn(true);
+        ApiException exUuid = assertThrows(ApiException.class, () -> prospectoService.crear(uuidDup));
+        assertEquals(HttpStatus.CONFLICT, exUuid.getStatus());
+
+        ProspectoRequestDto sinUuid = sampleDto(null, "111111111");
+        when(prospectoRepository.saveAndFlush(any(Prospecto.class))).thenAnswer(inv -> {
+            Prospecto saved = inv.getArgument(0);
+            saved.setClientUuid("generated-uuid");
+            return saved;
+        });
+        assertEquals("generated-uuid", prospectoService.crear(sinUuid).clientUuid());
+
+        ProspectoRequestDto blancoUuid = sampleDto("  ", "111111111");
+        assertEquals("generated-uuid", prospectoService.crear(blancoUuid).clientUuid());
+    }
+
+    @Test
+    void actualizarPermiteMismoRutORutNuevoYRechazaNoExistenteORutInvalido() {
+        Prospecto actual = Prospecto.builder()
+                .clientUuid("uuid-1")
+                .rut("11.111.111-1")
+                .genero(Genero.FEMENINO)
+                .situacionAcademica(SituacionAcademica.CUARTO_MEDIO)
+                .jornadaPreferencia(Jornada.DIURNA)
+                .nivelInteres(NivelInteres.ALTO)
+                .perfilMotivacional(PerfilMotivacional.INVERSION)
+                .build();
+
+        when(prospectoRepository.findById("no-existe")).thenReturn(Optional.empty());
+        assertEquals(HttpStatus.NOT_FOUND,
+                assertThrows(ApiException.class,
+                        () -> prospectoService.actualizar("no-existe", sampleDto("no-existe", "111111111"))).getStatus());
+
+        when(prospectoRepository.findById("uuid-1")).thenReturn(Optional.of(actual));
+        assertEquals(HttpStatus.BAD_REQUEST,
+                assertThrows(ApiException.class,
+                        () -> prospectoService.actualizar("uuid-1", sampleDto("uuid-1", "111111119"))).getStatus());
+
+        when(prospectoRepository.findByRut("11.111.111-1")).thenReturn(Optional.of(actual));
+        when(prospectoRepository.saveAndFlush(any(Prospecto.class))).thenAnswer(inv -> inv.getArgument(0));
+        assertEquals("11.111.111-1",
+                prospectoService.actualizar("uuid-1", sampleDto("uuid-1", "111111111")).rut());
+
+        when(prospectoRepository.findByRut("11.111.112-K")).thenReturn(Optional.empty());
+        assertEquals("11.111.112-K",
+                prospectoService.actualizar("uuid-1", sampleDto("uuid-1", "11111112k")).rut());
+    }
+
+    @Test
+    void eliminarBorraCuandoExisteYLanza404CuandoNoExiste() {
+        Prospecto actual = Prospecto.builder().clientUuid("uuid-1").build();
+        when(prospectoRepository.findById("uuid-1")).thenReturn(Optional.of(actual));
+        prospectoService.eliminar("uuid-1");
+        org.mockito.Mockito.verify(prospectoRepository).delete(actual);
+
+        when(prospectoRepository.findById("missing")).thenReturn(Optional.empty());
+        assertEquals(HttpStatus.NOT_FOUND,
+                assertThrows(ApiException.class, () -> prospectoService.eliminar("missing")).getStatus());
+    }
+
+    @Test
+    void sincronizarLoteCubreExitoTotalItemNuloYSinUuidYExcepcionSinMensaje() {
+        ProspectoRequestDto ok = sampleDto("uuid-ok", "111111111");
+        when(syncItemProcessor.procesarItem(ok)).thenReturn("uuid-ok");
+
+        BatchSyncResponseDto todoOk = prospectoService.sincronizarLote(
+                new BatchSyncRequestDto(2, "EVT-1", List.of(ok)));
+        assertEquals("Sincronización completada exitosamente.", todoOk.mensaje());
+
+        ProspectoRequestDto sinUuid = sampleDto(null, "111111111");
+        when(syncItemProcessor.procesarItem(null)).thenThrow(new RuntimeException((String) null));
+        when(syncItemProcessor.procesarItem(sinUuid)).thenThrow(new IllegalStateException("fallo"));
+
+        List<ProspectoRequestDto> items = new java.util.ArrayList<>();
+        items.add(null);
+        items.add(sinUuid);
+
+        BatchSyncResponseDto parcial = prospectoService.sincronizarLote(
+                new BatchSyncRequestDto(2, "EVT-1", items));
+        assertEquals(2, parcial.fallidosUuids().size());
+        assertEquals("SIN_UUID", parcial.fallidosUuids().get(0));
+        assertEquals("fallo", parcial.erroresPorUuid().get("SIN_UUID"));
+    }
+
+    @Test
+    void obtenerResumenConEventoBlancoYNuloYFilasConClaveNula() {
+        when(prospectoRepository.countByOptionalEventoId(null)).thenReturn(1L);
+        when(prospectoRepository.countGroupedBySede(null))
+                .thenReturn(List.<Object[]>of(new Object[]{null, 1L}));
+        when(prospectoRepository.countGroupedByNivelInteres(null)).thenReturn(List.of());
+        when(prospectoRepository.countGroupedByJornada(null)).thenReturn(List.of());
+
+        DashboardResumenDto resumenBlanco = prospectoService.obtenerResumen("   ");
+        assertEquals(1L, resumenBlanco.totalProspectos());
+        assertEquals(1L, resumenBlanco.conteoPorSede().get("SIN_DEFINIR"));
+
+        DashboardResumenDto resumenNulo = prospectoService.obtenerResumen(null);
+        assertEquals(1L, resumenNulo.totalProspectos());
+    }
+
     private ProspectoRequestDto sampleDto(String uuid, String rut) {
         return new ProspectoRequestDto(
                 uuid, 2, "EVT-1", 1728834720000L,

@@ -145,9 +145,65 @@ class ProspectoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalProspectos").value(2));
 
+        mockMvc.perform(get("/api/v1/prospectos")
+                        .param("captadorId", "2")
+                        .param("eventoId", "EVT-TEST")
+                        .header("Authorization", "Bearer " + captadorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)));
+
+        mockMvc.perform(get("/api/v1/prospectos/uuid-p1")
+                        .header("Authorization", "Bearer " + captadorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.clientUuid").value("uuid-p1"));
+
+        mockMvc.perform(get("/api/v1/eventos")
+                        .param("activo", "true")
+                        .header("Authorization", "Bearer " + captadorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)));
+
+        EventoRequestDto eventoActualizado = new EventoRequestDto(
+                "EVT-TEST", "Feria Duoc Actualizada", "Liceo A", "Viña del Mar", "Viña del Mar", "2026-11-22", false);
+        mockMvc.perform(put("/api/v1/eventos/EVT-TEST")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(eventoActualizado)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activo").value(false));
+
         mockMvc.perform(delete("/api/v1/prospectos/uuid-p2")
                         .header("Authorization", "Bearer " + captadorToken))
                 .andExpect(status().isNoContent());
+
+        mockMvc.perform(delete("/api/v1/eventos/EVT-TEST")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isNoContent());
+
+        // Prueba @PrePersist autogenerando IDs/timestamps cuando vienen nulos
+        EventoRequestDto eventoAutoId = new EventoRequestDto(
+                null, "Feria Auto", "Liceo B", "Quilpué", "Viña del Mar", "2026-12-01", true);
+        mockMvc.perform(post("/api/v1/eventos")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(eventoAutoId)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").exists());
+
+        ProspectoRequestDto prospectoAutoUuid = new ProspectoRequestDto(
+                null, 2, null, null,
+                "111111170", "Lucas", "Silva", "MASCULINO", "2008-05-01",
+                "Quilpué", "+56987654321", "lucas@duoc.cl", true,
+                "CUARTO_MEDIO", null, "Colegio Alemán", "Viña del Mar",
+                "DIURNA", "Viña del Mar", "ALTO", "VOCACIONAL",
+                List.of(new CarreraPreferenciaDto(1, "Diseño Gráfico"))
+        );
+        mockMvc.perform(post("/api/v1/prospectos")
+                        .header("Authorization", "Bearer " + captadorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(prospectoAutoUuid)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.clientUuid").exists());
     }
 
     private String signToken(String email, String rol, String secret) {

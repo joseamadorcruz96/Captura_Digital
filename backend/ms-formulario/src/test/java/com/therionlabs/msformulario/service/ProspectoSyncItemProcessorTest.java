@@ -125,6 +125,35 @@ class ProspectoSyncItemProcessorTest {
         assertThrows(ApiException.class, () -> processor.procesarItem(sinContacto));
     }
 
+    @Test
+    void procesarItemRechazaItemNuloYUsaFallbackFindByIdYUuidGenerado() {
+        assertThrows(ApiException.class, () -> processor.procesarItem(null));
+
+        Prospecto existentePorUuid = Prospecto.builder()
+                .clientUuid("uuid-existente")
+                .rut("11.111.112-K")
+                .build();
+        ProspectoRequestDto dtoConUuidExistente = sampleDto(" uuid-existente ", "111111111");
+        when(prospectoRepository.findByRut("11.111.111-1")).thenReturn(Optional.empty());
+        when(prospectoRepository.findById("uuid-existente")).thenReturn(Optional.of(existentePorUuid));
+        when(prospectoRepository.saveAndFlush(any(Prospecto.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        assertEquals("uuid-existente", processor.procesarItem(dtoConUuidExistente));
+
+        ProspectoRequestDto dtoSinUuid = sampleDto(null, "111111170");
+        when(prospectoRepository.findByRut("11.111.117-0")).thenReturn(Optional.empty());
+        when(prospectoRepository.saveAndFlush(any(Prospecto.class))).thenAnswer(inv -> {
+            Prospecto p = inv.getArgument(0);
+            p.setClientUuid("uuid-bd");
+            return p;
+        });
+
+        assertEquals("uuid-bd", processor.procesarItem(dtoSinUuid));
+
+        ProspectoRequestDto dtoUuidBlanco = sampleDto("   ", "111111170");
+        assertEquals("uuid-bd", processor.procesarItem(dtoUuidBlanco));
+    }
+
     private ProspectoRequestDto sampleDto(String uuid, String rut) {
         return new ProspectoRequestDto(
                 uuid, 2, "EVT-1", 1728834720000L,

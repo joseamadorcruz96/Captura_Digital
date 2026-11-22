@@ -28,8 +28,16 @@ class RutValidatorTest {
     void rejectsInvalidRuts() {
         assertFalse(RutValidator.isValid("11.111.111-9"));
         assertFalse(RutValidator.isValid("12345"));
+        assertFalse(RutValidator.isValid("1234567890"));
         assertFalse(RutValidator.isValid("ab.cde.fgh-1"));
         assertFalse(RutValidator.isValid(""));
         assertFalse(RutValidator.isValid(null));
+    }
+
+    @Test
+    void normalizeHandlesShortAndLongInputs() {
+        assertEquals("", RutValidator.normalize(null));
+        assertEquals("12345", RutValidator.normalize("12345"));
+        assertEquals("11.111.111-1", RutValidator.normalize("11111111199"));
     }
 }

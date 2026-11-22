@@ -43,7 +43,9 @@ import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
 import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
+import com.therionlabs.captura_digital_v2.data.model.SyncStatus
 import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
+import com.therionlabs.captura_digital_v2.data.repository.ProspectoRepository
 import com.therionlabs.captura_digital_v2.ui.components.DuocButton
 import com.therionlabs.captura_digital_v2.ui.components.DuocHeader
 import com.therionlabs.captura_digital_v2.ui.components.DuocOutlinedButton
@@ -60,7 +62,7 @@ import com.therionlabs.captura_digital_v2.ui.theme.Captura_Digital_v2Theme
 fun StepFormRoute(
     viewModel: StepFormViewModel = viewModel(),
     captadorId: Int = AuthRepository().getCurrentUser().id,
-    eventoId: String? = "EVT-DUOC-2026",
+    eventoId: String? = ProspectoRepository.activeEventId,
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -332,7 +334,12 @@ fun StepFormScreen(
             },
             text = {
                 Column {
-                    Text("Los datos fueron validados y almacenados localmente de forma segura en modo Offline.")
+                    val mensajeGuardado = if (uiState.savedSyncStatus == SyncStatus.SYNCED) {
+                        "Los datos fueron validados, guardados y sincronizados con el servidor."
+                    } else {
+                        "Los datos fueron validados y almacenados localmente de forma segura en modo Offline."
+                    }
+                    Text(mensajeGuardado)
                     Spacer(Modifier.height(8.dp))
                     Text("• Postulante: ${uiState.savedProspectoNombre}", fontWeight = FontWeight.SemiBold)
                     Text("• RUT validado: ${uiState.savedProspectoRut}", fontWeight = FontWeight.SemiBold)

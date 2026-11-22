@@ -10,6 +10,7 @@ import com.therionlabs.captura_digital_v2.data.model.Prospecto
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
 import com.therionlabs.captura_digital_v2.data.model.dto.BatchSyncRequestDto
+import com.therionlabs.captura_digital_v2.data.model.dto.EventoResponseDto
 import com.therionlabs.captura_digital_v2.data.model.dto.toDomain
 import com.therionlabs.captura_digital_v2.data.model.dto.toDto
 import com.therionlabs.captura_digital_v2.data.remote.ProspectoApi
@@ -30,7 +31,8 @@ data class SyncResult(
     val totalEnviados: Int,
     val exitosos: Int,
     val fallidos: Int,
-    val mensaje: String
+    val mensaje: String,
+    val huboErrorRed: Boolean = false
 )
 
 interface IProspectoRepository {
@@ -41,10 +43,20 @@ interface IProspectoRepository {
 
     fun observeProspectos(): Flow<List<Prospecto>> = flowOf(getAll())
 
+    suspend fun guardarProspectoSuspend(prospecto: Prospecto): Boolean = guardarProspecto(prospecto)
+
     suspend fun sincronizarPendientes(captadorId: Int, eventoId: String? = null): SyncResult =
         SyncResult(0, 0, 0, "Sin operación remota")
 
+    /**
+     * Sincroniza únicamente registros nuevos pendientes (PENDING_SYNC) sin reintentar SYNC_ERROR en bucle.
+     */
+    suspend fun sincronizarNuevosPendientes(captadorId: Int, eventoId: String? = null): SyncResult =
+        SyncResult(0, 0, 0, "Sin operación remota")
+
     suspend fun refrescarDesdeServidor(captadorId: Int? = null): Boolean = false
+
+    suspend fun obtenerEventoActivo(): EventoResponseDto? = null
 
     suspend fun actualizarProspecto(prospecto: Prospecto): Boolean = guardarProspecto(prospecto)
 
@@ -63,6 +75,12 @@ class ProspectoRepository(
 ) : IProspectoRepository {
 
     companion object {
+        @Volatile
+        var activeEventId: String = "EVT-DUOC-2026"
+
+        @Volatile
+        var activeEventName: String = "Feria Vocacional Duoc UC 2026"
+
         private fun resolveDao(): ProspectoDao? {
             return try {
                 if (CapturaDigitalApp.isDatabaseInitialized()) {
@@ -203,16 +221,31 @@ class ProspectoRepository(
     override fun getPendingSyncCount(): Int =
         getAll().count { it.syncStatus != SyncStatus.SYNCED }
 
-    suspend fun guardarProspectoSuspend(prospecto: Prospecto): Boolean {
+    override suspend fun guardarProspectoSuspend(prospecto: Prospecto): Boolean {
         upsertInMemory(prospecto)
         dao?.insertOrUpdate(prospecto)
         return true
     }
 
-    override suspend fun sincronizarPendientes(captadorId: Int, eventoId: String?): SyncResult {
+    override suspend fun sincronizarPendientes(captadorId: Int, eventoId: String?): SyncResult =
+        ejecutarSyncLote(captadorId = captadorId, eventoId = eventoId, incluirErroresPrevios = true)
+
+    override suspend fun sincronizarNuevosPendientes(captadorId: Int, eventoId: String?): SyncResult =
+        ejecutarSyncLote(captadorId = captadorId, eventoId = eventoId, incluirErroresPrevios = false)
+
+    private suspend fun ejecutarSyncLote(
+        captadorId: Int,
+        eventoId: String?,
+        incluirErroresPrevios: Boolean
+    ): SyncResult {
         val remoteApi = api ?: return SyncResult(0, 0, 0, "Cliente remoto no disponible")
-        val pending = dao?.getPendingSyncList()
+        val allPending = dao?.getPendingSyncList()
             ?: _prospectosFlow.value.filter { it.syncStatus != SyncStatus.SYNCED }
+        val pending = if (incluirErroresPrevios) {
+            allPending
+        } else {
+            allPending.filter { it.syncStatus == SyncStatus.PENDING_SYNC }
+        }
 
         if (pending.isEmpty()) {
             return SyncResult(0, 0, 0, "Todo al día. No hay registros pendientes.")
@@ -293,7 +326,8 @@ class ProspectoRepository(
                 totalEnviados = pending.size,
                 exitosos = 0,
                 fallidos = pending.size,
-                mensaje = "Sin conexión con el servidor; tus datos siguen seguros localmente."
+                mensaje = "Sin conexión con el servidor; tus datos siguen seguros localmente.",
+                huboErrorRed = true
             )
         } catch (ex: Exception) {
             safeLogError("ProspectoSync", "Error inesperado al sincronizar", ex)
@@ -311,23 +345,50 @@ class ProspectoRepository(
         return try {
             val remotos = remoteApi.listar(captadorId = captadorId)
                 .map { it.toDomain(SyncStatus.SYNCED) }
+            val remoteIds = remotos.map { it.id }.toSet()
 
             val actuales = dao?.getAllList() ?: _prospectosFlow.value
             val pendientesPorUuid = actuales
                 .filter { it.syncStatus != SyncStatus.SYNCED }
                 .associateBy { it.id }
 
+            if (dao != null) {
+                val obsoletosSyncedIds = actuales
+                    .filter {
+                        it.syncStatus == SyncStatus.SYNCED &&
+                            (captadorId == null || it.captadorId == captadorId) &&
+                            it.id !in remoteIds
+                    }
+                    .map { it.id }
+                obsoletosSyncedIds.forEach { dao.deleteById(it) }
+
+                val nuevosOActualizados = remotos.filter { it.id !in pendientesPorUuid }
+                if (nuevosOActualizados.isNotEmpty()) {
+                    dao.insertAll(nuevosOActualizados)
+                }
+            }
+
             // Conservamos cambios locales pendientes sin pisarlos con la versión remota
             val combinados = (remotos.filter { it.id !in pendientesPorUuid } + pendientesPorUuid.values)
                 .sortedByDescending { it.fechaCaptura }
-
-            if (dao != null && remotos.isNotEmpty()) {
-                dao.insertAll(remotos.filter { it.id !in pendientesPorUuid })
-            }
             _prospectosFlow.value = combinados
             true
         } catch (_: Exception) {
             false
+        }
+    }
+
+    override suspend fun obtenerEventoActivo(): EventoResponseDto? {
+        val remoteApi = api ?: return null
+        return try {
+            val activo = remoteApi.listarEventos(activo = true).firstOrNull()
+            if (activo != null) {
+                activeEventId = activo.id
+                activeEventName = activo.nombre
+            }
+            activo
+        } catch (_: Exception) {
+            null
         }
     }
 

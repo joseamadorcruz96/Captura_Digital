@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.therionlabs.captura_digital_v2.ui.components.ConnectivityBadge
 import com.therionlabs.captura_digital_v2.ui.components.DuocButton
 import com.therionlabs.captura_digital_v2.ui.components.DuocCard
 import com.therionlabs.captura_digital_v2.ui.components.DuocHeader
@@ -40,6 +42,10 @@ fun InicioRoute(
     onLogout: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.alReanudar()
+    }
 
     InicioScreen(
         uiState = uiState,
@@ -76,6 +82,7 @@ fun InicioScreen(
         DuocHeader(
             title = "¡Hola, $userName!",
             subtitle = roleName,
+            showConnectivityStatus = false,
             trailingAction = {
                 TextButton(onClick = onLogout) {
                     Text("Salir", color = Color.White, fontWeight = FontWeight.SemiBold)
@@ -113,30 +120,11 @@ fun InicioScreen(
                         )
                     }
 
-                    // Badge de conectividad
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFFE8F5E9),
+                    // Badge de conectividad en tiempo real
+                    ConnectivityBadge(
+                        isOnline = uiState.isOnline,
                         modifier = Modifier.padding(start = 8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .background(ExitoVerde, CircleShape)
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = "En línea",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = ExitoVerde,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
+                    )
                 }
             }
 
@@ -215,16 +203,21 @@ fun InicioScreen(
                     modifier = Modifier.weight(1f),
                     contentPadding = 14.dp
                 ) {
+                    val syncColor = when {
+                        uiState.syncErrorCount > 0 -> Color(0xFFC62828)
+                        uiState.pendingSyncCount == 0 -> ExitoVerde
+                        else -> DuocAmarillo
+                    }
                     Text(
                         text = if (uiState.pendingSyncCount == 0) "Al día" else "${uiState.pendingSyncCount}",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        color = if (uiState.pendingSyncCount == 0) ExitoVerde else DuocAmarillo
+                        color = syncColor
                     )
                     Text(
-                        text = "Sincronización",
+                        text = if (uiState.syncErrorCount > 0) "Con error de envío" else "Sincronización",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
+                        color = if (uiState.syncErrorCount > 0) Color(0xFFC62828) else Color.Gray
                     )
                 }
             }
@@ -244,13 +237,19 @@ fun InicioScreen(
                             color = DuocAzul
                         )
                         Text(
-                            text = uiState.syncMessage ?: if (uiState.pendingSyncCount > 0) {
+                            text = uiState.syncMessage ?: if (uiState.syncErrorCount > 0) {
+                                "${uiState.syncErrorCount} registro(s) con error; toca Sincronizar para reintentar"
+                            } else if (uiState.pendingSyncCount > 0) {
                                 "${uiState.pendingSyncCount} registro(s) listos para enviar al servidor"
                             } else {
                                 "Sin registros pendientes por subir"
                             },
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.DarkGray
+                            color = if (uiState.syncErrorCount > 0 && uiState.syncMessage == null) {
+                                Color(0xFFC62828)
+                            } else {
+                                Color.DarkGray
+                            }
                         )
                     }
                     Spacer(Modifier.width(8.dp))

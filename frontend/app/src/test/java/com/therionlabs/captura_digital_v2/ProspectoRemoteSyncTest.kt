@@ -173,4 +173,25 @@ class ProspectoRemoteSyncTest {
         repo.eliminarProspecto("uuid-crud")
         assertTrue(repo.getAll().none { it.id == "uuid-crud" })
     }
+
+    @Test
+    fun sincronizarNuevosPendientes_omiteSyncError_yRefrescarDesdeServidorEliminaObsoletos() = runTest {
+        val fakeApi = FakeProspectoApi()
+        val repo = ProspectoRepository(dao = null, api = fakeApi, coroutineScope = CoroutineScope(Dispatchers.Unconfined))
+
+        val conError = sampleProspecto("uuid-err", "11.111.111-1").copy(syncStatus = SyncStatus.SYNC_ERROR)
+        val nuevo = sampleProspecto("uuid-nuevo", "11.111.112-K").copy(syncStatus = SyncStatus.PENDING_SYNC)
+        repo.guardarProspecto(conError)
+        repo.guardarProspecto(nuevo)
+
+        val autoResult = repo.sincronizarNuevosPendientes(captadorId = 2, eventoId = "EVT-TEST")
+        assertEquals(1, autoResult.exitosos)
+        assertEquals(SyncStatus.SYNC_ERROR, repo.getAll().first { it.id == "uuid-err" }.syncStatus)
+        assertEquals(SyncStatus.SYNCED, repo.getAll().first { it.id == "uuid-nuevo" }.syncStatus)
+
+        // Si en servidor ya no está uuid-nuevo, refrescarDesdeServidor conserva pendientes y actualiza remotos
+        fakeApi.remoteStore.remove("uuid-nuevo")
+        assertTrue(repo.refrescarDesdeServidor(captadorId = 2))
+        assertTrue(repo.getAll().any { it.id == "uuid-err" })
+    }
 }

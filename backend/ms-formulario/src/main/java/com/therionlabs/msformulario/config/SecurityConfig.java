@@ -1,19 +1,31 @@
 package com.therionlabs.msformulario.config;
 
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
- * Configuración base stateless de Spring Security (Paso 3/4).
- * En el Paso 5 se incorporará el filtro de autenticación y reglas por rol.
+ * Configuración de Spring Security stateless con control de acceso basado en roles.
  */
 @Configuration
+@EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final HeaderContextAuthFilter headerContextAuthFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -21,9 +33,35 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
-                .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll()
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req, res, authEx) ->
+                                writeJsonError(res, HttpServletResponse.SC_UNAUTHORIZED,
+                                        "No autenticado: faltan cabeceras X-User-Id y X-User-Rol"))
+                        .accessDeniedHandler((req, res, deniedEx) ->
+                                writeJsonError(res, HttpServletResponse.SC_FORBIDDEN,
+                                        "Acceso denegado: tu rol no tiene permisos para esta operación"))
                 )
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/actuator/health",
+                                "/h2-console/**"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/eventos/**").hasAnyRole("CAPTADOR", "ADMINISTRATIVO")
+                        .requestMatchers("/api/v1/eventos/**").hasRole("ADMINISTRATIVO")
+                        .requestMatchers("/api/v1/prospectos/**").hasAnyRole("CAPTADOR", "ADMINISTRATIVO")
+                        .anyRequest().authenticated()
+                )
+                .addFilterBefore(headerContextAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
+    }
+
+    private void writeJsonError(HttpServletResponse response, int status, String message) throws IOException {
+        response.setStatus(status);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.getWriter().write("{\"status\":" + status + ",\"message\":\"" + message + "\"}");
     }
 }

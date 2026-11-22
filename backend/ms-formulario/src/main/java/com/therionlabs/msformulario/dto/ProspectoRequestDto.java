@@ -74,6 +74,5 @@ public record ProspectoRequestDto(
 
         @NotEmpty(message = "Debe seleccionar al menos una carrera de interés")
         @Size(max = 3, message = "Se permiten como máximo 3 prioridades de carrera")
-        @Valid
-        List<CarreraPreferenciaDto> carreras
+        List<@Valid CarreraPreferenciaDto> carreras
 ) {}

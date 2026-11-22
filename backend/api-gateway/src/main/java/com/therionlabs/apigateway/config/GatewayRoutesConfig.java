@@ -40,6 +40,9 @@ public class GatewayRoutesConfig {
                 .and(proxyRoute("ms-login-usuarios", "/api/usuarios/**", msLoginUrl))
                 .and(proxyRoute("ms-formulario-prospectos", "/api/v1/prospectos/**", msFormularioUrl))
                 .and(proxyRoute("ms-formulario-eventos", "/api/v1/eventos/**", msFormularioUrl))
+                .and(proxyRoute("ms-formulario-swagger-html", "/swagger-ui.html", msFormularioUrl))
+                .and(proxyRoute("ms-formulario-swagger-ui", "/swagger-ui/**", msFormularioUrl))
+                .and(proxyRoute("ms-formulario-api-docs", "/v3/api-docs/**", msFormularioUrl))
                 .and(docsRoute);
     }
 

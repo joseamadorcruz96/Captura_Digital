@@ -26,10 +26,15 @@ data class UsuarioDto(
     val activo: Boolean
 )
 
+data class LoginResponse(
+    val token: String,
+    val usuario: UsuarioDto
+)
+
 interface AuthApi {
 
     @POST("api/auth/login")
-    suspend fun login(@Body body: LoginBody): UsuarioDto
+    suspend fun login(@Body body: LoginBody): LoginResponse
 
     @POST("api/auth/recuperar")
     suspend fun recuperar(@Body body: RecuperarBody)

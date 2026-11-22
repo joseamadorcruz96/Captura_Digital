@@ -4,8 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -14,10 +13,9 @@ import java.io.IOException;
 /**
  * Registra cada solicitud HTTP entrante al Gateway junto a su código de estado y latencia.
  */
+@Slf4j
 @Component
 public class RequestLoggingFilter extends OncePerRequestFilter {
-
-    private static final Logger log = LoggerFactory.getLogger(RequestLoggingFilter.class);
 
     @Override
     protected void doFilterInternal(

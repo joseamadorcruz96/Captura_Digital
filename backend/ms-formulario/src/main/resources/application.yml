@@ -7,6 +7,12 @@ spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:h2}
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
 management:
   endpoints:
     web:

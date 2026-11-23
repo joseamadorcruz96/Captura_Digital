@@ -36,6 +36,12 @@ interface ProspectoDao {
     @Query("SELECT * FROM prospectos WHERE rut = :rut LIMIT 1")
     suspend fun getByRut(rut: String): Prospecto?
 
+    @Query("SELECT * FROM prospectos WHERE syncStatus != :syncedStatus ORDER BY fechaCaptura ASC")
+    suspend fun getPendingSyncList(syncedStatus: SyncStatus = SyncStatus.SYNCED): List<Prospecto>
+
+    @Query("UPDATE prospectos SET syncStatus = :status WHERE id IN (:ids)")
+    suspend fun updateSyncStatusByIds(ids: List<String>, status: SyncStatus): Int
+
     @Query("SELECT COUNT(*) FROM prospectos WHERE syncStatus = :status")
     suspend fun countBySyncStatus(status: SyncStatus = SyncStatus.PENDING_SYNC): Int
 

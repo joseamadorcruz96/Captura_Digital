@@ -1,0 +1,19 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+
+services:
+  ms-login-url: ${MS_LOGIN_URL:http://localhost:8081}
+  ms-formulario-url: ${MS_FORMULARIO_URL:http://localhost:8082}
+
+cors:
+  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:8080,http://localhost:5173,http://100.61.210.112:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

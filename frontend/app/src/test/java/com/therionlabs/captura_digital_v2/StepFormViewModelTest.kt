@@ -3,27 +3,50 @@ package com.therionlabs.captura_digital_v2
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
 import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
 import com.therionlabs.captura_digital_v2.data.model.Prospecto
+import com.therionlabs.captura_digital_v2.data.model.SyncStatus
 import com.therionlabs.captura_digital_v2.data.repository.IProspectoRepository
+import com.therionlabs.captura_digital_v2.data.repository.SyncResult
 import com.therionlabs.captura_digital_v2.ui.formularioModal.FormStep
 import com.therionlabs.captura_digital_v2.ui.formularioModal.StepFormViewModel
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
 
 class StepFormViewModelTest {
 
-    private class FakeProspectoRepository : IProspectoRepository {
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
+
+    private class FakeProspectoRepository(
+        private val syncOnlineOnSave: Boolean = false
+    ) : IProspectoRepository {
         val saved = mutableListOf<Prospecto>()
         override fun guardarProspecto(prospecto: Prospecto): Boolean {
             saved.add(prospecto)
             return true
         }
+
         override fun getAll(): List<Prospecto> = saved.toList()
         override fun getByCaptador(captadorId: Int): List<Prospecto> =
             saved.filter { it.captadorId == captadorId }
-        override fun getPendingSyncCount(): Int = saved.size
+
+        override fun getPendingSyncCount(): Int = saved.count { it.syncStatus != SyncStatus.SYNCED }
+
+        override suspend fun sincronizarNuevosPendientes(captadorId: Int, eventoId: String?): SyncResult {
+            return if (syncOnlineOnSave && saved.isNotEmpty()) {
+                val ids = saved.map { it.id }
+                for (i in saved.indices) {
+                    saved[i] = saved[i].copy(syncStatus = SyncStatus.SYNCED)
+                }
+                SyncResult(ids.size, ids.size, 0, "Sincronización completada exitosamente.")
+            } else {
+                SyncResult(saved.size, 0, saved.size, "Sin conexión", huboErrorRed = true)
+            }
+        }
     }
 
     @Test
@@ -60,8 +83,8 @@ class StepFormViewModelTest {
     }
 
     @Test
-    fun guardar_persisteCuandoLasSeisEtapasEstanValidadas() {
-        val repo = FakeProspectoRepository()
+    fun guardar_persisteCuandoLasSeisEtapasEstanValidadasYSincronizaSiHayRed() = runTest {
+        val repo = FakeProspectoRepository(syncOnlineOnSave = true)
         val viewModel = StepFormViewModel(repo)
 
         // Paso 1
@@ -106,6 +129,7 @@ class StepFormViewModelTest {
 
         val state = viewModel.uiState.value
         assertTrue(state.saveSuccess)
+        assertEquals(SyncStatus.SYNCED, state.savedSyncStatus)
         assertEquals(1, repo.saved.size)
         assertEquals("11.111.111-1", repo.saved.first().rut)
         assertEquals(1f, state.progress, 0.001f)

@@ -5,6 +5,7 @@ import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
 import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
+import com.therionlabs.captura_digital_v2.data.model.SyncStatus
 
 /**
  * Etapas del formulario modal Stepper (6 pasos).
@@ -95,7 +96,8 @@ data class StepFormUiState(
     val isSaving: Boolean = false,
     val saveSuccess: Boolean = false,
     val savedProspectoNombre: String = "",
-    val savedProspectoRut: String = ""
+    val savedProspectoRut: String = "",
+    val savedSyncStatus: SyncStatus? = null
 ) {
     val totalSteps: Int
         get() = FormStep.entries.size

@@ -1,0 +1,104 @@
+services:
+  db-login:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: captura_login
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql_login_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  db-formulario:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: captura_formulario
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql_formulario_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ms-login:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: ms-login
+    restart: unless-stopped
+    environment:
+      DB_HOST: db-login
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@captura.cl}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-123456}
+    depends_on:
+      db-login:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s --connect-timeout 2 http://127.0.0.1:8081/ >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ms-formulario:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: ms-formulario
+    restart: unless-stopped
+    environment:
+      PORT: "8082"
+      SPRING_PROFILES_ACTIVE: mysql
+      DB_HOST: db-formulario
+      DB_NAME: captura_formulario
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      db-formulario:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8082/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: api-gateway
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      MS_LOGIN_URL: http://ms-login:8081
+      MS_FORMULARIO_URL: http://ms-formulario:8082
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8080,http://localhost:5173,http://100.61.210.112:8080}
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      ms-login:
+        condition: service_healthy
+      ms-formulario:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8080/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysql_login_data:
+  mysql_formulario_data:

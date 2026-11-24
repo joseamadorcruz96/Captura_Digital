@@ -20,15 +20,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.therionlabs.captura_digital_v2.R
+import com.therionlabs.captura_digital_v2.di.rememberAppViewModel
 import com.therionlabs.captura_digital_v2.ui.components.DuocButton
 import com.therionlabs.captura_digital_v2.ui.components.DuocCard
 import com.therionlabs.captura_digital_v2.ui.components.DuocTextField
 
 @Composable
 fun RecoverRoute(
-    viewModel: RecoverViewModel = viewModel(),
+    viewModel: RecoverViewModel = rememberAppViewModel { container ->
+        if (container != null) RecoverViewModel(container.authRepository) else RecoverViewModel()
+    },
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

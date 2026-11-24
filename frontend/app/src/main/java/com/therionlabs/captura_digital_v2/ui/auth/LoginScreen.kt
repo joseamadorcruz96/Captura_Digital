@@ -27,23 +27,32 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.therionlabs.captura_digital_v2.R
+import com.therionlabs.captura_digital_v2.data.local.LocalUserDataSource
+import com.therionlabs.captura_digital_v2.data.model.AppMode
+import com.therionlabs.captura_digital_v2.data.model.User
+import com.therionlabs.captura_digital_v2.di.rememberAppViewModel
 import com.therionlabs.captura_digital_v2.ui.components.DuocButton
 import com.therionlabs.captura_digital_v2.ui.components.DuocCard
 import com.therionlabs.captura_digital_v2.ui.components.DuocTextField
 
 @Composable
 fun LoginRoute(
-    viewModel: LoginViewModel = viewModel(),
-    onLoginSuccess: () -> Unit,
+    viewModel: LoginViewModel = rememberAppViewModel { container ->
+        if (container != null) LoginViewModel(container.authRepository) else LoginViewModel()
+    },
+    onLoginSuccess: (User) -> Unit,
     onForgotPassword: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
+    LaunchedEffect(Unit) {
+        viewModel.observarModo()
+    }
+
     LaunchedEffect(uiState.user) {
-        if (uiState.user != null) onLoginSuccess()
+        uiState.user?.let(onLoginSuccess)
     }
 
     LaunchedEffect(uiState.error) {
@@ -54,6 +63,8 @@ fun LoginRoute(
         uiState = uiState,
         onEmailChange = viewModel::onEmailChange,
         onPasswordChange = viewModel::onPasswordChange,
+        onAppModeChange = viewModel::onAppModeChange,
+        onSelectDemoAccount = { email -> viewModel.seleccionarCuentaDemo(email) },
         onLoginClick = viewModel::login,
         onForgotPassword = onForgotPassword
     )
@@ -64,6 +75,8 @@ fun LoginScreen(
     uiState: LoginUiState,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
+    onAppModeChange: (AppMode) -> Unit = {},
+    onSelectDemoAccount: (String) -> Unit = {},
     onLoginClick: () -> Unit,
     onForgotPassword: () -> Unit
 ) {
@@ -83,10 +96,10 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Spacer(Modifier.height(48.dp))
+        Spacer(Modifier.height(36.dp))
 
         Surface(
-            modifier = Modifier.size(110.dp),
+            modifier = Modifier.size(104.dp),
             shape = CircleShape,
             color = Color.White,
             shadowElevation = 8.dp
@@ -111,7 +124,7 @@ fun LoginScreen(
             color = DuocAmarillo
         )
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(24.dp))
 
         DuocCard(
             modifier = Modifier.fillMaxWidth(),
@@ -119,6 +132,44 @@ fun LoginScreen(
             elevation = 8.dp,
             contentPadding = 20.dp
         ) {
+            // Selector discreto de modo operativo (Demo Local vs Servidor Remoto)
+            Text(
+                text = "Modo de operación",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = DuocAzul
+            )
+            Spacer(Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                AppMode.entries.forEach { mode ->
+                    FilterChip(
+                        selected = uiState.appMode == mode,
+                        onClick = { onAppModeChange(mode) },
+                        label = {
+                            Text(
+                                text = mode.displayName,
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = DuocAmarillo,
+                            selectedLabelColor = DuocAzul
+                        )
+                    )
+                }
+            }
+            Text(
+                text = uiState.appMode.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
+
+            Spacer(Modifier.height(14.dp))
+
             DuocTextField(
                 value = uiState.email,
                 onValueChange = onEmailChange,
@@ -138,6 +189,34 @@ fun LoginScreen(
                 errorMessage = uiState.passwordError,
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) }
             )
+
+            if (uiState.appMode == AppMode.LOCAL_DEMO) {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = "Acceso rápido demo (clave: ${LocalUserDataSource.DEMO_PASSWORD})",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = DuocAzul,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AssistChip(
+                        onClick = { onSelectDemoAccount(LocalUserDataSource.DEMO_ADMIN.email) },
+                        label = { Text("Admin") }
+                    )
+                    AssistChip(
+                        onClick = { onSelectDemoAccount(LocalUserDataSource.DEMO_CAPTADOR.email) },
+                        label = { Text("Captador") }
+                    )
+                    AssistChip(
+                        onClick = { onSelectDemoAccount(LocalUserDataSource.DEMO_PROSPECTO.email) },
+                        label = { Text("Prospecto") }
+                    )
+                }
+            }
 
             uiState.error?.let {
                 Spacer(Modifier.height(12.dp))
@@ -169,7 +248,7 @@ fun LoginScreen(
             )
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(16.dp))
         Text(
             "Las cuentas son creadas por el administrador",
             style = MaterialTheme.typography.bodySmall,

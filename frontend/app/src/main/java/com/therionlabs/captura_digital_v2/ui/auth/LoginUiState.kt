@@ -1,5 +1,6 @@
 package com.therionlabs.captura_digital_v2.ui.auth
 
+import com.therionlabs.captura_digital_v2.data.model.AppMode
 import com.therionlabs.captura_digital_v2.data.model.User
 
 data class LoginUiState(
@@ -8,5 +9,6 @@ data class LoginUiState(
     val emailError: String? = null,
     val passwordError: String? = null,
     val error: String? = null,
-    val user: User? = null
+    val user: User? = null,
+    val appMode: AppMode = AppMode.LOCAL_DEMO
 )

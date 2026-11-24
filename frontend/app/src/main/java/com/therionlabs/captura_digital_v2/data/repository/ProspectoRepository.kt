@@ -1,13 +1,10 @@
 package com.therionlabs.captura_digital_v2.data.repository
 
 import com.therionlabs.captura_digital_v2.CapturaDigitalApp
+import com.therionlabs.captura_digital_v2.data.local.DemoSeedGenerator
 import com.therionlabs.captura_digital_v2.data.local.dao.ProspectoDao
-import com.therionlabs.captura_digital_v2.data.model.Genero
-import com.therionlabs.captura_digital_v2.data.model.Jornada
-import com.therionlabs.captura_digital_v2.data.model.NivelInteres
-import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
+import com.therionlabs.captura_digital_v2.data.model.AppMode
 import com.therionlabs.captura_digital_v2.data.model.Prospecto
-import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
 import com.therionlabs.captura_digital_v2.data.model.dto.BatchSyncRequestDto
 import com.therionlabs.captura_digital_v2.data.model.dto.EventoResponseDto
@@ -61,25 +58,28 @@ interface IProspectoRepository {
     suspend fun actualizarProspecto(prospecto: Prospecto): Boolean = guardarProspecto(prospecto)
 
     suspend fun eliminarProspecto(clientUuid: String): Boolean = false
+
+    suspend fun poblarDatosDemo(resetear: Boolean = true): Int = 0
 }
 
 /**
- * Repositorio de Prospectos Offline-First:
- * - Persistencia inmediata en Room SQLite.
- * - Sincronización por lote (Batch Sync) y CRUD en tiempo real vía Retrofit + API Gateway.
+ * Repositorio de Prospectos Offline-First con soporte dual:
+ * - [AppMode.LOCAL_DEMO]: persistencia Room/memoria, métricas y simulación de sync 100% locales.
+ * - [AppMode.REMOTE_GATEWAY]: Room + sincronización por lote y CRUD remoto vía Retrofit + API Gateway.
  */
 class ProspectoRepository(
     private val dao: ProspectoDao? = resolveDao(),
     private val api: ProspectoApi? = resolveApi(dao),
-    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO),
+    private val appModeProvider: () -> AppMode = { AppMode.REMOTE_GATEWAY }
 ) : IProspectoRepository {
 
     companion object {
         @Volatile
-        var activeEventId: String = "EVT-DUOC-2026"
+        var activeEventId: String = DemoSeedGenerator.DEFAULT_EVENT_ID
 
         @Volatile
-        var activeEventName: String = "Feria Vocacional Duoc UC 2026"
+        var activeEventName: String = DemoSeedGenerator.DEFAULT_EVENT_NAME
 
         private fun resolveDao(): ProspectoDao? {
             return try {
@@ -92,60 +92,10 @@ class ProspectoRepository(
         }
 
         private fun resolveApi(dao: ProspectoDao?): ProspectoApi? {
-            // En tests unitarios sin Room ni mock explícito evitamos inicializar OkHttp innecesariamente si no se usa
             return if (dao != null) RetrofitClient.prospectoApi else null
         }
 
-        private val fallbackMemoryList = mutableListOf(
-            Prospecto(
-                id = "demo-uuid-1",
-                captadorId = 2,
-                eventoId = "EVT-DUOC-2026",
-                rut = "20.123.456-5",
-                nombres = "Camila Andrea",
-                apellidos = "Valenzuela Soto",
-                genero = Genero.FEMENINO,
-                fechaNacimiento = "15/04/2008",
-                comunaResidencia = "Viña del Mar",
-                celular = "+56987654321",
-                email = "camila.valenzuela@gmail.com",
-                consentimientoDatos = true,
-                situacionAcademica = SituacionAcademica.CUARTO_MEDIO,
-                establecimientoEducacional = "Colegio Rubén Castro",
-                comunaEstablecimiento = "Viña del Mar",
-                jornadaPreferencia = Jornada.DIURNA,
-                sedeInteres = "Viña del Mar",
-                nivelInteres = NivelInteres.ALTO,
-                perfilMotivacional = PerfilMotivacional.VOCACIONAL,
-                carreraPrioridad1 = "Ingeniería en Informática",
-                carreraPrioridad2 = "Analista Programador",
-                syncStatus = SyncStatus.PENDING_SYNC
-            ),
-            Prospecto(
-                id = "demo-uuid-2",
-                captadorId = 2,
-                eventoId = "EVT-DUOC-2026",
-                rut = "11.111.111-1",
-                nombres = "Lucas Ignacio",
-                apellidos = "González Silva",
-                genero = Genero.MASCULINO,
-                fechaNacimiento = "22/09/2007",
-                comunaResidencia = "Valparaíso",
-                celular = "+56912345678",
-                email = "lucas.gonzalez@gmail.com",
-                consentimientoDatos = true,
-                situacionAcademica = SituacionAcademica.EGRESADO_EM,
-                establecimientoEducacional = "Liceo Eduardo de la Barra",
-                comunaEstablecimiento = "Valparaíso",
-                jornadaPreferencia = Jornada.DIURNA,
-                sedeInteres = "Valparaíso",
-                nivelInteres = NivelInteres.MEDIO,
-                perfilMotivacional = PerfilMotivacional.INVERSION,
-                carreraPrioridad1 = "Gastronomía Internacional",
-                carreraPrioridad2 = null,
-                syncStatus = SyncStatus.PENDING_SYNC
-            )
-        )
+        private val fallbackMemoryList = DemoSeedGenerator.generarProspectosDemo().toMutableList()
     }
 
     private val _prospectosFlow = MutableStateFlow<List<Prospecto>>(
@@ -238,7 +188,6 @@ class ProspectoRepository(
         eventoId: String?,
         incluirErroresPrevios: Boolean
     ): SyncResult {
-        val remoteApi = api ?: return SyncResult(0, 0, 0, "Cliente remoto no disponible")
         val allPending = dao?.getPendingSyncList()
             ?: _prospectosFlow.value.filter { it.syncStatus != SyncStatus.SYNCED }
         val pending = if (incluirErroresPrevios) {
@@ -247,6 +196,29 @@ class ProspectoRepository(
             allPending.filter { it.syncStatus == SyncStatus.PENDING_SYNC }
         }
 
+        if (appModeProvider() == AppMode.LOCAL_DEMO) {
+            if (pending.isEmpty()) {
+                return SyncResult(0, 0, 0, "Todo al día. No hay registros pendientes.")
+            }
+            val ids = pending.map { it.id }
+            dao?.updateSyncStatusByIds(ids, SyncStatus.SYNCED)
+            val idsSet = ids.toSet()
+            _prospectosFlow.value = _prospectosFlow.value.map { item ->
+                if (item.id in idsSet) item.copy(syncStatus = SyncStatus.SYNCED) else item
+            }
+            if (dao == null) {
+                syncFallbackListStatuses(exitosos = idsSet, fallidos = emptySet())
+            }
+            return SyncResult(
+                totalEnviados = pending.size,
+                exitosos = pending.size,
+                fallidos = 0,
+                mensaje = "Sincronización demo local completada (${pending.size} registro(s)).",
+                huboErrorRed = false
+            )
+        }
+
+        val remoteApi = api ?: return SyncResult(0, 0, 0, "Cliente remoto no disponible")
         if (pending.isEmpty()) {
             return SyncResult(0, 0, 0, "Todo al día. No hay registros pendientes.")
         }
@@ -341,6 +313,13 @@ class ProspectoRepository(
     }
 
     override suspend fun refrescarDesdeServidor(captadorId: Int?): Boolean {
+        if (appModeProvider() == AppMode.LOCAL_DEMO) {
+            if (dao != null) {
+                _prospectosFlow.value = dao.getAllList()
+            }
+            return true
+        }
+
         val remoteApi = api ?: return false
         return try {
             val remotos = remoteApi.listar(captadorId = captadorId)
@@ -379,6 +358,18 @@ class ProspectoRepository(
     }
 
     override suspend fun obtenerEventoActivo(): EventoResponseDto? {
+        if (appModeProvider() == AppMode.LOCAL_DEMO) {
+            return EventoResponseDto(
+                id = activeEventId,
+                nombre = activeEventName,
+                establecimiento = "Duoc UC Sede Viña del Mar",
+                comuna = "Viña del Mar",
+                sedeResponsable = "Viña del Mar",
+                fechaEvento = null,
+                activo = true
+            )
+        }
+
         val remoteApi = api ?: return null
         return try {
             val activo = remoteApi.listarEventos(activo = true).firstOrNull()
@@ -393,27 +384,57 @@ class ProspectoRepository(
     }
 
     override suspend fun actualizarProspecto(prospecto: Prospecto): Boolean {
-        val remoteApi = api
-        val updated = if (remoteApi != null) {
-            try {
-                remoteApi.actualizar(prospecto.id, prospecto.toDto()).toDomain(SyncStatus.SYNCED)
-            } catch (_: Exception) {
+        val updated = if (appModeProvider() == AppMode.LOCAL_DEMO) {
+            prospecto.copy(syncStatus = SyncStatus.PENDING_SYNC)
+        } else {
+            val remoteApi = api
+            if (remoteApi != null) {
+                try {
+                    remoteApi.actualizar(prospecto.id, prospecto.toDto()).toDomain(SyncStatus.SYNCED)
+                } catch (_: Exception) {
+                    prospecto.copy(syncStatus = SyncStatus.PENDING_SYNC)
+                }
+            } else {
                 prospecto.copy(syncStatus = SyncStatus.PENDING_SYNC)
             }
-        } else {
-            prospecto.copy(syncStatus = SyncStatus.PENDING_SYNC)
         }
         return guardarProspectoSuspend(updated)
     }
 
     override suspend fun eliminarProspecto(clientUuid: String): Boolean {
-        api?.let { remoteApi ->
-            runCatching { remoteApi.eliminar(clientUuid) }
+        if (appModeProvider() == AppMode.REMOTE_GATEWAY) {
+            api?.let { remoteApi ->
+                runCatching { remoteApi.eliminar(clientUuid) }
+            }
         }
         dao?.deleteById(clientUuid)
         _prospectosFlow.value = _prospectosFlow.value.filterNot { it.id == clientUuid }
         fallbackMemoryList.removeAll { it.id == clientUuid }
         return true
+    }
+
+    override suspend fun poblarDatosDemo(resetear: Boolean): Int {
+        val seed = DemoSeedGenerator.generarProspectosDemo(eventoId = activeEventId)
+        if (dao != null) {
+            if (resetear) {
+                dao.deleteAll()
+            }
+            dao.insertAll(seed)
+            _prospectosFlow.value = dao.getAllList()
+        } else {
+            if (resetear) {
+                fallbackMemoryList.clear()
+                fallbackMemoryList.addAll(seed)
+            } else {
+                seed.forEach { item ->
+                    if (fallbackMemoryList.none { it.id == item.id || it.rut == item.rut }) {
+                        fallbackMemoryList.add(item)
+                    }
+                }
+            }
+            _prospectosFlow.value = fallbackMemoryList.toList()
+        }
+        return seed.size
     }
 
     private fun syncFallbackListStatuses(exitosos: Set<String>, fallidos: Set<String>) {

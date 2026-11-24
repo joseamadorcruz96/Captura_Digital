@@ -7,26 +7,20 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.therionlabs.captura_digital_v2.data.local.dao.ProspectoDao
-import com.therionlabs.captura_digital_v2.data.model.Genero
-import com.therionlabs.captura_digital_v2.data.model.Jornada
-import com.therionlabs.captura_digital_v2.data.model.NivelInteres
-import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
 import com.therionlabs.captura_digital_v2.data.model.Prospecto
-import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
-import com.therionlabs.captura_digital_v2.data.model.SyncStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /**
  * Base de datos principal Room SQLite para Captura Digital v2.
- * Administra la tabla 'prospectos' e incluye callback de pre-población
- * para garantizar disponibilidad inmediata de datos demo en primera ejecución.
+ * Administra la tabla 'prospectos', exporta el esquema para migraciones verificables
+ * e incluye callback de pre-población con datos demo realistas en primera ejecución.
  */
 @Database(
     entities = [Prospecto::class],
     version = 3,
-    exportSchema = false
+    exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -44,8 +38,11 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "captura_digital.db"
                 )
+                    .addMigrations(*DatabaseMigrations.ALL_MIGRATIONS)
+                    // Solo versiones heredadas previas a v3 pueden reconstruirse si no tenían historial;
+                    // desde v3+ toda evolución requiere Migration explícita en DatabaseMigrations.
+                    .fallbackToDestructiveMigrationFrom(dropAllTables = true, 1, 2)
                     .addCallback(DatabaseCallback())
-                    .fallbackToDestructiveMigration(dropAllTables = true)
                     .build()
                 INSTANCE = instance
                 instance
@@ -64,57 +61,7 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         suspend fun populateInitialData(dao: ProspectoDao) {
-            val initialList = listOf(
-                Prospecto(
-                    id = "demo-uuid-1",
-                    captadorId = 2,
-                    eventoId = "EVT-DUOC-2026",
-                    rut = "20.123.456-5",
-                    nombres = "Camila Andrea",
-                    apellidos = "Valenzuela Soto",
-                    genero = Genero.FEMENINO,
-                    fechaNacimiento = "15/04/2008",
-                    comunaResidencia = "Viña del Mar",
-                    celular = "+56987654321",
-                    email = "camila.valenzuela@gmail.com",
-                    consentimientoDatos = true,
-                    situacionAcademica = SituacionAcademica.CUARTO_MEDIO,
-                    establecimientoEducacional = "Colegio Rubén Castro",
-                    comunaEstablecimiento = "Viña del Mar",
-                    jornadaPreferencia = Jornada.DIURNA,
-                    sedeInteres = "Viña del Mar",
-                    nivelInteres = NivelInteres.ALTO,
-                    perfilMotivacional = PerfilMotivacional.VOCACIONAL,
-                    carreraPrioridad1 = "Ingeniería en Informática",
-                    carreraPrioridad2 = "Analista Programador",
-                    syncStatus = SyncStatus.PENDING_SYNC
-                ),
-                Prospecto(
-                    id = "demo-uuid-2",
-                    captadorId = 2,
-                    eventoId = "EVT-DUOC-2026",
-                    rut = "11.111.111-1",
-                    nombres = "Lucas Ignacio",
-                    apellidos = "González Silva",
-                    genero = Genero.MASCULINO,
-                    fechaNacimiento = "22/09/2007",
-                    comunaResidencia = "Valparaíso",
-                    celular = "+56912345678",
-                    email = "lucas.gonzalez@gmail.com",
-                    consentimientoDatos = true,
-                    situacionAcademica = SituacionAcademica.EGRESADO_EM,
-                    establecimientoEducacional = "Liceo Eduardo de la Barra",
-                    comunaEstablecimiento = "Valparaíso",
-                    jornadaPreferencia = Jornada.DIURNA,
-                    sedeInteres = "Valparaíso",
-                    nivelInteres = NivelInteres.MEDIO,
-                    perfilMotivacional = PerfilMotivacional.INVERSION,
-                    carreraPrioridad1 = "Gastronomía Internacional",
-                    carreraPrioridad2 = null,
-                    syncStatus = SyncStatus.PENDING_SYNC
-                )
-            )
-            dao.insertAll(initialList)
+            dao.insertAll(DemoSeedGenerator.generarProspectosDemo())
         }
     }
 }

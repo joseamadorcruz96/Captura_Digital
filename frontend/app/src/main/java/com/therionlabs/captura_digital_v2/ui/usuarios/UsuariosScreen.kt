@@ -1,6 +1,7 @@
 package com.therionlabs.captura_digital_v2.ui.usuarios
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -24,9 +25,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.therionlabs.captura_digital_v2.data.model.User
 import com.therionlabs.captura_digital_v2.data.model.UserRole
+import com.therionlabs.captura_digital_v2.di.rememberAppViewModel
 import com.therionlabs.captura_digital_v2.ui.components.DuocButton
 import com.therionlabs.captura_digital_v2.ui.components.DuocCard
 import com.therionlabs.captura_digital_v2.ui.components.DuocHeader
@@ -38,7 +39,9 @@ import com.therionlabs.captura_digital_v2.ui.theme.FondoClaro
 
 @Composable
 fun UsuariosRoute(
-    viewModel: UsuariosViewModel = viewModel(),
+    viewModel: UsuariosViewModel = rememberAppViewModel { container ->
+        if (container != null) UsuariosViewModel(container.usuarioRepository) else UsuariosViewModel()
+    },
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -150,8 +153,11 @@ fun UsuariosScreen(
                 Spacer(Modifier.height(12.dp))
 
                 Text("Rol", fontWeight = FontWeight.SemiBold, color = DuocAzul)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(UserRole.CAPTADOR, UserRole.ADMINISTRATIVO).forEach { rol ->
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    UserRole.entries.forEach { rol ->
                         FilterChip(
                             selected = uiState.rol == rol,
                             onClick = { onRolChange(rol) },

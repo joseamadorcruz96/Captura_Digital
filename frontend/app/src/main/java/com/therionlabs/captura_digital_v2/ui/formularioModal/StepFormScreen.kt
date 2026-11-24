@@ -37,7 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.therionlabs.captura_digital_v2.CapturaDigitalApp
 import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
@@ -46,6 +46,7 @@ import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
 import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
 import com.therionlabs.captura_digital_v2.data.repository.ProspectoRepository
+import com.therionlabs.captura_digital_v2.di.rememberAppViewModel
 import com.therionlabs.captura_digital_v2.ui.components.DuocButton
 import com.therionlabs.captura_digital_v2.ui.components.DuocHeader
 import com.therionlabs.captura_digital_v2.ui.components.DuocOutlinedButton
@@ -60,8 +61,11 @@ import com.therionlabs.captura_digital_v2.ui.theme.Captura_Digital_v2Theme
 
 @Composable
 fun StepFormRoute(
-    viewModel: StepFormViewModel = viewModel(),
-    captadorId: Int = AuthRepository().getCurrentUser().id,
+    viewModel: StepFormViewModel = rememberAppViewModel { container ->
+        if (container != null) StepFormViewModel(container.prospectoRepository) else StepFormViewModel()
+    },
+    captadorId: Int = CapturaDigitalApp.containerOrNull()?.authRepository?.getCurrentUser()?.id
+        ?: AuthRepository().getCurrentUser().id,
     eventoId: String? = ProspectoRepository.activeEventId,
     onBack: () -> Unit
 ) {

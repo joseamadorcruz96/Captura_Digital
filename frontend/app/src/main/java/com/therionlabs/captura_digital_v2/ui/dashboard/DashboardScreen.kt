@@ -22,9 +22,9 @@ import androidx.compose.ui.unit.dp
 import java.text.NumberFormat
 import java.util.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.therionlabs.captura_digital_v2.data.model.Prospecto
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
+import com.therionlabs.captura_digital_v2.di.rememberAppViewModel
 import com.therionlabs.captura_digital_v2.ui.auth.DuocAmarillo
 import com.therionlabs.captura_digital_v2.ui.auth.DuocAzul
 import com.therionlabs.captura_digital_v2.ui.auth.DuocAzulMedio
@@ -41,7 +41,17 @@ private val pieColors = listOf(
 
 @Composable
 fun DashboardRoute(
-    viewModel: DashboardViewModel = viewModel(),
+    viewModel: DashboardViewModel = rememberAppViewModel { container ->
+        if (container != null) {
+            DashboardViewModel(
+                prospectoRepository = container.prospectoRepository,
+                authRepository = container.authRepository,
+                indicadoresApi = container.indicadoresApi
+            )
+        } else {
+            DashboardViewModel()
+        }
+    },
     onBack: () -> Unit,
     onUsuarios: () -> Unit
 ) {

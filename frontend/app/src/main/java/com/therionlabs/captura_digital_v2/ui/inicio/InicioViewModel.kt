@@ -26,6 +26,7 @@ class InicioViewModel(
     private val _uiState = MutableStateFlow(
         InicioUiState(
             user = authRepository.getCurrentUser(),
+            appMode = authRepository.appMode,
             activeEventId = ProspectoRepository.activeEventId,
             activeEventName = ProspectoRepository.activeEventName,
             isOnline = connectivityObserver.isCurrentlyOnline()
@@ -37,6 +38,17 @@ class InicioViewModel(
     private var lastAutoSyncPendingIds: Set<String> = emptySet()
 
     init {
+        viewModelScope.launch {
+            authRepository.sessionState.collect { session ->
+                _uiState.update { state ->
+                    state.copy(
+                        user = session.user ?: authRepository.getCurrentUser(),
+                        appMode = session.appMode
+                    )
+                }
+            }
+        }
+
         viewModelScope.launch {
             prospectoRepository.observeProspectos().collect { prospectos ->
                 latestProspectos = prospectos
@@ -161,6 +173,16 @@ class InicioViewModel(
                     isOnline = !result.huboErrorRed,
                     syncMessage = result.mensaje
                 )
+            }
+        }
+    }
+
+    fun poblarDatosDemo() {
+        viewModelScope.launch {
+            val count = prospectoRepository.poblarDatosDemo(resetear = true)
+            lastAutoSyncPendingIds = emptySet()
+            _uiState.update {
+                it.copy(syncMessage = "Datos demo restablecidos ($count prospectos).")
             }
         }
     }

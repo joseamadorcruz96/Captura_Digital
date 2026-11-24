@@ -1,5 +1,9 @@
 package com.therionlabs.captura_digital_v2
 
+import com.therionlabs.captura_digital_v2.data.local.InMemorySessionStorage
+import com.therionlabs.captura_digital_v2.data.local.LocalUserDataSource
+import com.therionlabs.captura_digital_v2.data.model.AppMode
+import com.therionlabs.captura_digital_v2.data.model.UserRole
 import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
 import com.therionlabs.captura_digital_v2.ui.auth.LoginViewModel
 import org.junit.After
@@ -80,5 +84,28 @@ class LoginViewModelTest {
         viewModel.login()
 
         assertEquals("No se pudo conectar con el servidor", viewModel.uiState.value.error)
+    }
+
+    @Test
+    fun localDemo_cambiarModoYSeleccionarCuentaDemoPermiteLoginOffline() {
+        api.sinConexion = true
+        val storage = InMemorySessionStorage(defaultAppMode = AppMode.REMOTE_GATEWAY)
+        val localRepo = AuthRepository(
+            api = api,
+            localDataSource = LocalUserDataSource(),
+            sessionStorage = storage
+        )
+        val vm = LoginViewModel(localRepo)
+
+        vm.onAppModeChange(AppMode.LOCAL_DEMO)
+        assertEquals(AppMode.LOCAL_DEMO, vm.uiState.value.appMode)
+        assertEquals(AppMode.LOCAL_DEMO, storage.currentAppMode)
+
+        vm.seleccionarCuentaDemo(LocalUserDataSource.DEMO_PROSPECTO.email)
+        vm.login()
+
+        val state = vm.uiState.value
+        assertEquals(UserRole.PROSPECTO, state.user?.role)
+        assertNull(state.error)
     }
 }

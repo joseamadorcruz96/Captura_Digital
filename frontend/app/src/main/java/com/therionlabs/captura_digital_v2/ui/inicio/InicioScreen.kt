@@ -17,7 +17,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.therionlabs.captura_digital_v2.data.model.AppMode
+import com.therionlabs.captura_digital_v2.di.rememberAppViewModel
 import com.therionlabs.captura_digital_v2.ui.components.ConnectivityBadge
 import com.therionlabs.captura_digital_v2.ui.components.DuocButton
 import com.therionlabs.captura_digital_v2.ui.components.DuocCard
@@ -35,7 +36,17 @@ import com.therionlabs.captura_digital_v2.ui.theme.FondoClaro
 
 @Composable
 fun InicioRoute(
-    viewModel: InicioViewModel = viewModel(),
+    viewModel: InicioViewModel = rememberAppViewModel { container ->
+        if (container != null) {
+            InicioViewModel(
+                authRepository = container.authRepository,
+                prospectoRepository = container.prospectoRepository,
+                connectivityObserver = container.connectivityObserver
+            )
+        } else {
+            InicioViewModel()
+        }
+    },
     onNewCapture: () -> Unit,
     onDashboard: () -> Unit,
     onHelp: () -> Unit,
@@ -53,6 +64,7 @@ fun InicioRoute(
         onDashboard = onDashboard,
         onHelp = onHelp,
         onSync = viewModel::sincronizarAhora,
+        onResetDemoData = viewModel::poblarDatosDemo,
         onLogout = {
             viewModel.logout()
             onLogout()
@@ -67,6 +79,7 @@ fun InicioScreen(
     onDashboard: () -> Unit,
     onHelp: () -> Unit,
     onSync: () -> Unit = {},
+    onResetDemoData: () -> Unit = {},
     onLogout: () -> Unit
 ) {
     val userName = uiState.user?.name ?: "Usuario"
@@ -105,12 +118,31 @@ fun InicioScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "EVENTO ACTIVO",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.Gray,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "EVENTO ACTIVO",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.Gray,
+                                fontWeight = FontWeight.Bold
+                            )
+                            if (uiState.appMode == AppMode.LOCAL_DEMO) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = DuocAmarillo.copy(alpha = 0.25f)
+                                ) {
+                                    Text(
+                                        text = "Demo Local",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = DuocAzul,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
                         Spacer(Modifier.height(2.dp))
                         Text(
                             text = uiState.activeEventName,
@@ -222,7 +254,7 @@ fun InicioScreen(
                 }
             }
 
-            // Botón de Sincronización Offline-First hacia Gateway -> ms-formulario
+            // Botón de Sincronización Offline-First (Demo Local o Gateway -> ms-formulario)
             DuocCard(elevation = 2.dp, contentPadding = 14.dp) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -231,7 +263,11 @@ fun InicioScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Sincronización Remota",
+                            text = if (uiState.appMode == AppMode.LOCAL_DEMO) {
+                                "Sincronización Demo Local"
+                            } else {
+                                "Sincronización Remota"
+                            },
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = DuocAzul
@@ -240,7 +276,11 @@ fun InicioScreen(
                             text = uiState.syncMessage ?: if (uiState.syncErrorCount > 0) {
                                 "${uiState.syncErrorCount} registro(s) con error; toca Sincronizar para reintentar"
                             } else if (uiState.pendingSyncCount > 0) {
-                                "${uiState.pendingSyncCount} registro(s) listos para enviar al servidor"
+                                if (uiState.appMode == AppMode.LOCAL_DEMO) {
+                                    "${uiState.pendingSyncCount} registro(s) listos para simular envío local"
+                                } else {
+                                    "${uiState.pendingSyncCount} registro(s) listos para enviar al servidor"
+                                }
                             } else {
                                 "Sin registros pendientes por subir"
                             },
@@ -268,8 +308,22 @@ fun InicioScreen(
                                 color = Color.White
                             )
                         } else {
-                            Text("Sincronizar")
+                            Text(if (uiState.appMode == AppMode.LOCAL_DEMO) "Simular Sync" else "Sincronizar")
                         }
+                    }
+                }
+                if (uiState.appMode == AppMode.LOCAL_DEMO) {
+                    Spacer(Modifier.height(6.dp))
+                    TextButton(
+                        onClick = onResetDemoData,
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                    ) {
+                        Text(
+                            text = "Poblar / Resetear datos demo (RUTs Módulo 11)",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = DuocAzul,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
             }

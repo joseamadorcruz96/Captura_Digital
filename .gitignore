@@ -37,3 +37,4 @@ guia_estudio/
 .env.*
 !.env.example
 /ROADMAP.md
+/roadmap-implementacion/

@@ -79,7 +79,79 @@ object DatabaseMigrations {
         }
     }
 
-    val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_3_4)
+    /**
+     * Migración v4 -> v5: extiende 'prospectos' con estadoCompletitud, firma digital y geolocalización,
+     * e incorpora la tabla 'formulario_borradores' con índices para borradores locales no sincronizables.
+     */
+    val MIGRATION_4_5: Migration = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            if (!hasColumn(db, "prospectos", "estadoCompletitud")) {
+                db.execSQL(
+                    "ALTER TABLE `prospectos` ADD COLUMN `estadoCompletitud` TEXT NOT NULL DEFAULT 'COMPLETO'"
+                )
+            }
+            if (!hasColumn(db, "prospectos", "firmaDigitalBase64")) {
+                db.execSQL("ALTER TABLE `prospectos` ADD COLUMN `firmaDigitalBase64` TEXT")
+            }
+            if (!hasColumn(db, "prospectos", "firmaTimestampEpoch")) {
+                db.execSQL("ALTER TABLE `prospectos` ADD COLUMN `firmaTimestampEpoch` INTEGER")
+            }
+            if (!hasColumn(db, "prospectos", "latitud")) {
+                db.execSQL("ALTER TABLE `prospectos` ADD COLUMN `latitud` REAL")
+            }
+            if (!hasColumn(db, "prospectos", "longitud")) {
+                db.execSQL("ALTER TABLE `prospectos` ADD COLUMN `longitud` REAL")
+            }
+
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `formulario_borradores` (
+                    `id` TEXT NOT NULL,
+                    `captadorId` INTEGER NOT NULL,
+                    `eventoId` TEXT,
+                    `modoExpress` INTEGER NOT NULL,
+                    `currentStep` TEXT NOT NULL,
+                    `consentimiento` INTEGER NOT NULL,
+                    `firmaDigitalBase64` TEXT,
+                    `firmaTimestampEpoch` INTEGER,
+                    `rut` TEXT NOT NULL,
+                    `nombres` TEXT NOT NULL,
+                    `apellidos` TEXT NOT NULL,
+                    `genero` TEXT NOT NULL,
+                    `fechaNacimiento` TEXT NOT NULL,
+                    `comunaResidencia` TEXT NOT NULL,
+                    `celular` TEXT NOT NULL,
+                    `email` TEXT NOT NULL,
+                    `situacionAcademica` TEXT NOT NULL,
+                    `situacionAcademicaOtro` TEXT NOT NULL,
+                    `establecimientoEducacional` TEXT NOT NULL,
+                    `comunaEstablecimiento` TEXT NOT NULL,
+                    `jornada` TEXT NOT NULL,
+                    `sedeInteres` TEXT,
+                    `nivelInteres` TEXT,
+                    `perfilMotivacional` TEXT,
+                    `escuelaSeleccionadaId` TEXT NOT NULL,
+                    `carreraPrioridad1` TEXT NOT NULL,
+                    `carreraPrioridad2` TEXT NOT NULL,
+                    `carreraPrioridad3` TEXT NOT NULL,
+                    `latitud` REAL,
+                    `longitud` REAL,
+                    `editingProspectoId` TEXT,
+                    `updatedAtEpoch` INTEGER NOT NULL,
+                    PRIMARY KEY(`id`)
+                )
+                """.trimIndent()
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_formulario_borradores_captadorId` ON `formulario_borradores` (`captadorId`)"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_formulario_borradores_updatedAtEpoch` ON `formulario_borradores` (`updatedAtEpoch`)"
+            )
+        }
+    }
+
+    val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_3_4, MIGRATION_4_5)
 
     /**
      * Helper para validar o ejecutar alteraciones de esquema de forma segura en futuras migraciones.

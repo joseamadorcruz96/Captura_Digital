@@ -2,6 +2,7 @@ package com.therionlabs.captura_digital_v2.di
 
 import android.content.Context
 import com.therionlabs.captura_digital_v2.data.local.AppDatabase
+import com.therionlabs.captura_digital_v2.data.local.CatalogoLocalidadesDataSource
 import com.therionlabs.captura_digital_v2.data.local.DataStoreSessionStorage
 import com.therionlabs.captura_digital_v2.data.local.DemoSeedGenerator
 import com.therionlabs.captura_digital_v2.data.local.LocalUserDataSource
@@ -12,6 +13,7 @@ import com.therionlabs.captura_digital_v2.data.remote.IndicadoresApi
 import com.therionlabs.captura_digital_v2.data.remote.NetworkMonitor
 import com.therionlabs.captura_digital_v2.data.remote.RetrofitClient
 import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
+import com.therionlabs.captura_digital_v2.data.repository.BorradorRepository
 import com.therionlabs.captura_digital_v2.data.repository.EventoRepository
 import com.therionlabs.captura_digital_v2.data.repository.ProspectoRepository
 import com.therionlabs.captura_digital_v2.data.repository.UsuarioRepository
@@ -26,6 +28,8 @@ interface AppContainer {
     val usuarioRepository: UsuarioRepository
     val prospectoRepository: ProspectoRepository
     val eventoRepository: EventoRepository
+    val borradorRepository: BorradorRepository
+    val catalogoLocalidadesDataSource: CatalogoLocalidadesDataSource
     val connectivityObserver: ConnectivityObserver
     val indicadoresApi: IndicadoresApi
 }
@@ -34,6 +38,7 @@ class DefaultAppContainer(
     context: Context,
     database: AppDatabase
 ) : AppContainer {
+    private val appContext = context.applicationContext
 
     override val sessionStorage: SessionStorage by lazy {
         DataStoreSessionStorage.create(
@@ -81,6 +86,14 @@ class DefaultAppContainer(
             sessionStorage = sessionStorage,
             appModeProvider = { sessionStorage.currentAppMode }
         )
+    }
+
+    override val borradorRepository: BorradorRepository by lazy {
+        BorradorRepository(dao = database.borradorDao())
+    }
+
+    override val catalogoLocalidadesDataSource: CatalogoLocalidadesDataSource by lazy {
+        CatalogoLocalidadesDataSource(context = appContext)
     }
 
     override val connectivityObserver: ConnectivityObserver by lazy {

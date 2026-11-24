@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,12 +22,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.therionlabs.captura_digital_v2.data.model.Genero
+import com.therionlabs.captura_digital_v2.data.model.Prospecto
 import com.therionlabs.captura_digital_v2.ui.components.DuocCard
 import com.therionlabs.captura_digital_v2.ui.components.DuocTextField
+import com.therionlabs.captura_digital_v2.ui.formularioModal.components.DuplicateRutAlertCard
 import com.therionlabs.captura_digital_v2.ui.theme.Captura_Digital_v2Theme
 
 /**
- * Paso 2: Identificación personal del postulante.
+ * Paso 2: Identificación personal del postulante, escáner QR/PDF417 y detección de RUT duplicado.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -43,7 +47,12 @@ fun DatosPersonalesStepScreen(
     onApellidosChange: (String) -> Unit,
     onGeneroChange: (Genero) -> Unit,
     onFechaNacimientoChange: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    scannerFeedbackMessage: String? = null,
+    duplicateProspecto: Prospecto? = null,
+    onScanCedulaClick: () -> Unit = {},
+    onVerFichaDuplicada: () -> Unit = {},
+    onCargarDuplicadoParaActualizar: () -> Unit = {}
 ) {
     DuocCard(
         modifier = modifier.fillMaxWidth(),
@@ -56,6 +65,26 @@ fun DatosPersonalesStepScreen(
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
+        Spacer(Modifier.height(10.dp))
+
+        OutlinedButton(
+            onClick = onScanCedulaClick,
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Escanear Cédula / QR", fontWeight = FontWeight.Bold)
+        }
+
+        if (scannerFeedbackMessage != null) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = scannerFeedbackMessage,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
         Spacer(Modifier.height(12.dp))
 
         DuocTextField(
@@ -66,6 +95,16 @@ fun DatosPersonalesStepScreen(
             isError = rutError != null,
             errorMessage = rutError
         )
+
+        if (duplicateProspecto != null) {
+            Spacer(Modifier.height(8.dp))
+            DuplicateRutAlertCard(
+                prospecto = duplicateProspecto,
+                onVerFicha = onVerFichaDuplicada,
+                onCargarParaActualizar = onCargarDuplicadoParaActualizar
+            )
+        }
+
         Spacer(Modifier.height(10.dp))
 
         DuocTextField(

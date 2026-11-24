@@ -16,10 +16,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.therionlabs.captura_digital_v2.ui.components.DuocCard
 import com.therionlabs.captura_digital_v2.ui.components.DuocTextField
+import com.therionlabs.captura_digital_v2.ui.formularioModal.components.AutocompleteTextField
 import com.therionlabs.captura_digital_v2.ui.theme.Captura_Digital_v2Theme
 
 /**
- * Paso 3: Comuna de residencia y canales de contacto del postulante.
+ * Paso 3: Comuna de residencia (con autocompletado asistido) y canales de contacto del postulante.
  */
 @Composable
 fun ContactoStepScreen(
@@ -32,7 +33,9 @@ fun ContactoStepScreen(
     onComunaResidenciaChange: (String) -> Unit,
     onCelularChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    comunaSuggestions: List<String> = emptyList(),
+    onSelectComunaSuggestion: (String) -> Unit = onComunaResidenciaChange
 ) {
     DuocCard(
         modifier = modifier.fillMaxWidth(),
@@ -53,9 +56,12 @@ fun ContactoStepScreen(
         )
         Spacer(Modifier.height(12.dp))
 
-        DuocTextField(
+        AutocompleteTextField(
             value = comunaResidencia,
             onValueChange = onComunaResidenciaChange,
+            suggestions = comunaSuggestions,
+            itemPrimaryText = { it },
+            onSuggestionSelected = onSelectComunaSuggestion,
             label = "Comuna de Residencia",
             placeholder = "Ej: Viña del Mar, Quilpué",
             isError = comunaResidenciaError != null,

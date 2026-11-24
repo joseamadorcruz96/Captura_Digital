@@ -56,7 +56,14 @@ data class Prospecto(
     // Matriz de Carreras (1 a 3 prioridades)
     val carreraPrioridad1: String,
     val carreraPrioridad2: String? = null,
-    val carreraPrioridad3: String? = null
+    val carreraPrioridad3: String? = null,
+
+    // StepForm 2.0: Completitud (Completo vs Express), firma digital y geolocalización opcional
+    val estadoCompletitud: EstadoCompletitud = EstadoCompletitud.COMPLETO,
+    val firmaDigitalBase64: String? = null,
+    val firmaTimestampEpoch: Long? = null,
+    val latitud: Double? = null,
+    val longitud: Double? = null
 ) {
     val nombreCompleto: String
         get() = "$nombres $apellidos".trim()

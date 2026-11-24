@@ -1,6 +1,7 @@
 package com.therionlabs.captura_digital_v2.data.local
 
 import androidx.room.TypeConverter
+import com.therionlabs.captura_digital_v2.data.model.EstadoCompletitud
 import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
@@ -70,6 +71,14 @@ class Converters {
     @TypeConverter
     fun toTipoEvento(value: String?): TipoEvento? = value?.let {
         runCatching { TipoEvento.valueOf(it) }.getOrDefault(TipoEvento.FERIA)
+    }
+
+    @TypeConverter
+    fun fromEstadoCompletitud(value: EstadoCompletitud?): String? = value?.name
+
+    @TypeConverter
+    fun toEstadoCompletitud(value: String?): EstadoCompletitud? = value?.let {
+        runCatching { EstadoCompletitud.valueOf(it) }.getOrDefault(EstadoCompletitud.COMPLETO)
     }
 
 }

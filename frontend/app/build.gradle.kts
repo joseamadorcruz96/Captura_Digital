@@ -115,6 +115,14 @@ dependencies {
 
     // Preferences DataStore (sesión persistente y AppMode)
     implementation(libs.androidx.datastore.preferences)
+
+    // CameraX + ML Kit Barcode Scanning (escáner de cédula chilena QR / PDF417)
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.mlkit.barcode.scanning)
+
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
     implementation("com.squareup.retrofit2:converter-gson:3.0.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")

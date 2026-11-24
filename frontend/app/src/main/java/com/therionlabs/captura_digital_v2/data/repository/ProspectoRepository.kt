@@ -12,6 +12,7 @@ import com.therionlabs.captura_digital_v2.data.model.dto.toDomain
 import com.therionlabs.captura_digital_v2.data.model.dto.toDto
 import com.therionlabs.captura_digital_v2.data.remote.ProspectoApi
 import com.therionlabs.captura_digital_v2.data.remote.RetrofitClient
+import com.therionlabs.captura_digital_v2.util.RutUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -60,6 +61,15 @@ interface IProspectoRepository {
     suspend fun eliminarProspecto(clientUuid: String): Boolean = false
 
     suspend fun poblarDatosDemo(resetear: Boolean = true): Int = 0
+
+    suspend fun buscarPorRut(rut: String): Prospecto? {
+        val limpio = RutUtils.cleanRut(rut)
+        if (limpio.isBlank()) return null
+        return getAll().firstOrNull { RutUtils.cleanRut(it.rut) == limpio }
+    }
+
+    suspend fun buscarPorId(id: String): Prospecto? =
+        getAll().firstOrNull { it.id == id }
 }
 
 /**
@@ -129,7 +139,7 @@ class ProspectoRepository(
 
     private fun upsertInMemory(prospecto: Prospecto) {
         val current = _prospectosFlow.value.toMutableList()
-        val index = current.indexOfFirst { it.rut == prospecto.rut }
+        val index = current.indexOfFirst { it.id == prospecto.id || it.rut == prospecto.rut }
         if (index != -1) {
             current[index] = prospecto
         } else {
@@ -138,7 +148,7 @@ class ProspectoRepository(
         _prospectosFlow.value = current
 
         if (dao == null) {
-            val fallbackIndex = fallbackMemoryList.indexOfFirst { it.rut == prospecto.rut }
+            val fallbackIndex = fallbackMemoryList.indexOfFirst { it.id == prospecto.id || it.rut == prospecto.rut }
             if (fallbackIndex != -1) {
                 fallbackMemoryList[fallbackIndex] = prospecto
             } else {
@@ -176,6 +186,26 @@ class ProspectoRepository(
         upsertInMemory(prospecto)
         dao?.insertOrUpdate(prospecto)
         return true
+    }
+
+    override suspend fun buscarPorRut(rut: String): Prospecto? {
+        val limpio = RutUtils.cleanRut(rut)
+        if (limpio.isBlank()) return null
+        val formateado = RutUtils.formatRut(limpio)
+        if (dao != null) {
+            val fromDao = dao.getByRut(formateado) ?: dao.getByRut(rut.trim())
+            if (fromDao != null) return fromDao
+        }
+        return _prospectosFlow.value.firstOrNull { RutUtils.cleanRut(it.rut) == limpio }
+    }
+
+    override suspend fun buscarPorId(id: String): Prospecto? {
+        if (id.isBlank()) return null
+        if (dao != null) {
+            val fromList = dao.getAllList().firstOrNull { it.id == id }
+            if (fromList != null) return fromList
+        }
+        return _prospectosFlow.value.firstOrNull { it.id == id }
     }
 
     override suspend fun sincronizarPendientes(captadorId: Int, eventoId: String?): SyncResult =

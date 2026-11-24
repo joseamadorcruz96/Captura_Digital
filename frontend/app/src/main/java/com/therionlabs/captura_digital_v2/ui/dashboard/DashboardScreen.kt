@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import java.text.NumberFormat
 import java.util.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.therionlabs.captura_digital_v2.data.model.EstadoCompletitud
 import com.therionlabs.captura_digital_v2.data.model.Prospecto
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
 import com.therionlabs.captura_digital_v2.di.rememberAppViewModel
@@ -431,11 +432,30 @@ private fun ProspectosCrudCard(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = prospecto.nombreCompleto,
-                                    fontWeight = FontWeight.Bold,
-                                    color = DuocAzul
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = prospecto.nombreCompleto,
+                                        fontWeight = FontWeight.Bold,
+                                        color = DuocAzul
+                                    )
+                                    if (prospecto.estadoCompletitud == EstadoCompletitud.EXPRESS) {
+                                        Surface(
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = DuocAmarillo.copy(alpha = 0.28f)
+                                        ) {
+                                            Text(
+                                                text = "Express · Incompleto",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = DuocAzul,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+                                }
                                 Text(
                                     text = "${prospecto.rut} · ${prospecto.carreraPrioridad1}",
                                     style = MaterialTheme.typography.bodySmall,

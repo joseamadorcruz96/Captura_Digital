@@ -12,7 +12,9 @@ import com.therionlabs.captura_digital_v2.data.model.UserRole
 import com.therionlabs.captura_digital_v2.data.remote.ConnectivityObserver
 import com.therionlabs.captura_digital_v2.data.remote.NetworkMonitor
 import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
+import com.therionlabs.captura_digital_v2.data.repository.BorradorRepository
 import com.therionlabs.captura_digital_v2.data.repository.EventoRepository
+import com.therionlabs.captura_digital_v2.data.repository.IBorradorRepository
 import com.therionlabs.captura_digital_v2.data.repository.IEventoRepository
 import com.therionlabs.captura_digital_v2.data.repository.IProspectoRepository
 import com.therionlabs.captura_digital_v2.data.repository.ProspectoRepository
@@ -29,7 +31,8 @@ class InicioViewModel(
     private val prospectoRepository: IProspectoRepository = ProspectoRepository(),
     private val connectivityObserver: ConnectivityObserver = NetworkMonitor.observer(),
     private val eventoRepository: IEventoRepository = EventoRepository(),
-    private val nowProvider: () -> Long = { System.currentTimeMillis() }
+    private val nowProvider: () -> Long = { System.currentTimeMillis() },
+    private val borradorRepository: IBorradorRepository = BorradorRepository()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -46,6 +49,7 @@ class InicioViewModel(
     private var latestProspectos: List<Prospecto> = emptyList()
     private var lastAutoSyncPendingIds: Set<String> = emptySet()
     private var turnoObserverJob: Job? = null
+    private var borradoresObserverJob: Job? = null
     private var observedTurnoUserId: Int? = null
 
     init {
@@ -61,6 +65,7 @@ class InicioViewModel(
                 if (observedTurnoUserId != resolvedUser.id) {
                     observedTurnoUserId = resolvedUser.id
                     observarTurnoUsuario(resolvedUser.id)
+                    observarBorradoresUsuario(resolvedUser.id, resolvedUser.role)
                 }
                 recalcularMetricas()
             }
@@ -118,6 +123,20 @@ class InicioViewModel(
         }
     }
 
+    private fun observarBorradoresUsuario(captadorId: Int, role: UserRole) {
+        borradoresObserverJob?.cancel()
+        borradoresObserverJob = viewModelScope.launch {
+            val flow = if (role == UserRole.ADMINISTRATIVO) {
+                borradorRepository.observeAll()
+            } else {
+                borradorRepository.observeByCaptador(captadorId)
+            }
+            flow.collect { drafts ->
+                _uiState.update { it.copy(borradoresCount = drafts.size) }
+            }
+        }
+    }
+
     private fun recalcularMetricas() {
         val currentUser = authRepository.getCurrentUser()
         val stateSnapshot = _uiState.value
@@ -140,6 +159,11 @@ class InicioViewModel(
 
         val pending = prospectos.count { it.syncStatus != SyncStatus.SYNCED }
         val syncErrors = prospectos.count { it.syncStatus == SyncStatus.SYNC_ERROR }
+        val totalCapturas = if (currentUser.role == UserRole.ADMINISTRATIVO) {
+            prospectos.size
+        } else {
+            prospectos.count { it.captadorId == currentUser.id }
+        }
 
         _uiState.update { state ->
             // Si entraron nuevos pendientes, limpiamos mensajes de éxito anteriores para no contradecir el contador
@@ -150,6 +174,7 @@ class InicioViewModel(
             state.copy(
                 user = currentUser,
                 totalCapturedToday = capturedToday,
+                totalCapturasCount = totalCapturas,
                 eventCapturedCount = eventCaptured,
                 turnoCapturedCount = turnoCaptured,
                 pendingSyncCount = pending,

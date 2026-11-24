@@ -1,6 +1,7 @@
 package com.therionlabs.captura_digital_v2
 
 import com.therionlabs.captura_digital_v2.data.local.Converters
+import com.therionlabs.captura_digital_v2.data.model.EstadoCompletitud
 import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
@@ -53,7 +54,12 @@ class ProspectoPersistenceTest {
             perfilMotivacional = PerfilMotivacional.VOCACIONAL,
             carreraPrioridad1 = "Ingeniería en Informática",
             carreraPrioridad2 = "Diseño Digital",
-            carreraPrioridad3 = "Animación Digital"
+            carreraPrioridad3 = "Animación Digital",
+            estadoCompletitud = EstadoCompletitud.EXPRESS,
+            firmaDigitalBase64 = "iVBORw0KGgoAAAANSUhEUg==",
+            firmaTimestampEpoch = 1776543215000L,
+            latitud = -33.0245,
+            longitud = -71.5518
         )
 
         assertEquals("Matías Esteban Rojas Palma", original.nombreCompleto)
@@ -66,10 +72,23 @@ class ProspectoPersistenceTest {
         assertEquals(original.apellidos, dto.apellidos)
         assertEquals("MASCULINO", dto.genero)
         assertEquals("DIURNA", dto.jornadaPreferencia)
+        assertEquals("EXPRESS", dto.estadoCompletitud)
+        assertEquals(original.firmaDigitalBase64, dto.firmaDigitalBase64)
+        assertEquals(original.latitud, dto.latitud)
         assertEquals(3, dto.carreras.size)
 
         val mappedBack = dto.toDomain(syncStatus = SyncStatus.PENDING_SYNC)
         assertEquals(original, mappedBack)
+
+        // Retrocompatibilidad: DTO antiguo sin nuevos campos asume EstadoCompletitud.COMPLETO
+        val legacyMapped = dto.copy(
+            estadoCompletitud = null,
+            firmaDigitalBase64 = null,
+            firmaTimestampEpoch = null,
+            latitud = null,
+            longitud = null
+        ).toDomain(syncStatus = SyncStatus.SYNCED)
+        assertEquals(EstadoCompletitud.COMPLETO, legacyMapped.estadoCompletitud)
     }
 
     @Test

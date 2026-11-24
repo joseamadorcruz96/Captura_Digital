@@ -55,13 +55,15 @@ fun InicioRoute(
                 authRepository = container.authRepository,
                 prospectoRepository = container.prospectoRepository,
                 connectivityObserver = container.connectivityObserver,
-                eventoRepository = container.eventoRepository
+                eventoRepository = container.eventoRepository,
+                borradorRepository = container.borradorRepository
             )
         } else {
             InicioViewModel()
         }
     },
     onNewCapture: () -> Unit,
+    onViewCapturas: () -> Unit = {},
     onDashboard: () -> Unit,
     onManageEventos: () -> Unit = {},
     onHelp: () -> Unit,
@@ -76,6 +78,7 @@ fun InicioRoute(
     InicioScreen(
         uiState = uiState,
         onNewCapture = onNewCapture,
+        onViewCapturas = onViewCapturas,
         onDashboard = onDashboard,
         onManageEventos = onManageEventos,
         onHelp = onHelp,
@@ -106,7 +109,8 @@ fun InicioScreen(
     onStartTurno: (Int?) -> Unit = {},
     onFinishTurno: () -> Unit = {},
     onDismissResumenTurno: () -> Unit = {},
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onViewCapturas: () -> Unit = {}
 ) {
     val userName = uiState.user?.name ?: "Usuario"
     val roleName = uiState.user?.role?.displayName ?: "Captura Digital"
@@ -378,6 +382,17 @@ fun InicioScreen(
                         text = "Iniciar Nueva Captura",
                         onClick = onNewCapture
                     )
+                    Spacer(Modifier.height(10.dp))
+                    val resumenCapturas = if (uiState.borradoresCount > 0) {
+                        val sufijo = if (uiState.borradoresCount == 1) "borrador" else "borradores"
+                        "Ver Capturas y Borradores (${uiState.borradoresCount} $sufijo)"
+                    } else {
+                        "Ver Capturas y Borradores (${uiState.totalCapturasCount})"
+                    }
+                    DuocOutlinedButton(
+                        text = resumenCapturas,
+                        onClick = onViewCapturas
+                    )
                 }
             } else {
                 DuocCard(
@@ -552,6 +567,12 @@ fun InicioScreen(
                     description = "Apoya en terreno ingresando prospectos de forma directa",
                     iconText = "📝",
                     onClick = onNewCapture
+                )
+                QuickActionCard(
+                    title = "Capturas y Borradores",
+                    description = "Revisa borradores iniciados, Express y capturas sincronizadas",
+                    iconText = "📋",
+                    onClick = onViewCapturas
                 )
             }
 

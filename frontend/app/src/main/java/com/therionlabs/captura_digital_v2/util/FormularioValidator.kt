@@ -1,5 +1,6 @@
 package com.therionlabs.captura_digital_v2.util
 
+import com.therionlabs.captura_digital_v2.data.model.FormularioBorrador
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
 import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
 
@@ -41,6 +42,74 @@ object FormularioValidator {
         } else {
             Resultado.Invalido("Debe aceptar el consentimiento para continuar")
         }
+    }
+
+    /**
+     * Valida la firma digital táctil capturada sobre el Canvas.
+     */
+    fun validarFirmaDigital(firmaBase64: String?): Resultado {
+        return if (!firmaBase64.isNullOrBlank()) {
+            Resultado.Validado
+        } else {
+            Resultado.Invalido("Debe registrar la firma digital del postulante")
+        }
+    }
+
+    /**
+     * Regla combinada de consentimiento + firma digital.
+     * Cuando [exigirFirma] es `false` (por defecto en flujos que no dibujan en Canvas),
+     * solo exige aceptación del consentimiento; cuando es `true`, valida ambos.
+     */
+    fun validarConsentimientoConFirma(
+        aceptado: Boolean,
+        firmaBase64: String?,
+        exigirFirma: Boolean = false
+    ): Resultado {
+        val consentRes = validarConsentimiento(aceptado)
+        if (!consentRes.isValid) return consentRes
+        return if (exigirFirma) validarFirmaDigital(firmaBase64) else Resultado.Validado
+    }
+
+    /**
+     * Regla mínima para guardar un borrador local (no sincronizable):
+     * exige al menos 1 campo de datos completado (ej. nombre o RUT).
+     */
+    fun validarBorradorMinimo(borrador: FormularioBorrador): Resultado {
+        return if (borrador.hasMinimumDraftData()) {
+            Resultado.Validado
+        } else {
+            Resultado.Invalido("Ingresa al menos un dato (ej: nombre o RUT) para guardar el borrador")
+        }
+    }
+
+    /**
+     * Valida los campos esenciales requeridos por el Modo Captura Express (Fast-Track).
+     */
+    fun validarExpress(
+        consentimiento: Boolean,
+        firmaBase64: String?,
+        exigirFirma: Boolean = false,
+        rut: String,
+        nombres: String,
+        apellidos: String,
+        email: String,
+        celular: String,
+        sedeInteres: String?,
+        carreraPrioridad1: String
+    ): List<String> {
+        val errores = mutableListOf<String>()
+        validarConsentimientoConFirma(consentimiento, firmaBase64, exigirFirma).errorOrNull()?.let(errores::add)
+        validarRut(rut).errorOrNull()?.let(errores::add)
+        validarNombres(nombres).errorOrNull()?.let(errores::add)
+        validarApellidos(apellidos).errorOrNull()?.let(errores::add)
+        val contacto = validarContacto(email, celular)
+        if (!contacto.isValid) {
+            contacto.emailResultado.errorOrNull()?.let(errores::add)
+                ?: contacto.celularResultado.errorOrNull()?.let(errores::add)
+        }
+        validarSede(sedeInteres).errorOrNull()?.let(errores::add)
+        validarCarreraPrioridad1(carreraPrioridad1).errorOrNull()?.let(errores::add)
+        return errores.distinct()
     }
 
     fun validarRut(rut: String): Resultado {

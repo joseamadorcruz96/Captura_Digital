@@ -18,14 +18,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.therionlabs.captura_digital_v2.data.local.EstablecimientoItem
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 import com.therionlabs.captura_digital_v2.ui.components.DuocCard
 import com.therionlabs.captura_digital_v2.ui.components.DuocTextField
+import com.therionlabs.captura_digital_v2.ui.formularioModal.components.AutocompleteTextField
 import com.therionlabs.captura_digital_v2.ui.theme.Captura_Digital_v2Theme
 
 /**
- * Paso 4: Antecedentes escolares y preferencia de jornada.
+ * Paso 4: Antecedentes escolares (con autocompletado asistido) y preferencia de jornada.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -41,7 +43,11 @@ fun AntecedentesStepScreen(
     onEstablecimientoChange: (String) -> Unit,
     onComunaEstablecimientoChange: (String) -> Unit,
     onJornadaChange: (Jornada) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    establecimientoSuggestions: List<EstablecimientoItem> = emptyList(),
+    onSelectEstablecimientoSuggestion: (EstablecimientoItem) -> Unit = { onEstablecimientoChange(it.nombre) },
+    comunaEstablecimientoSuggestions: List<String> = emptyList(),
+    onSelectComunaEstablecimientoSuggestion: (String) -> Unit = onComunaEstablecimientoChange
 ) {
     DuocCard(
         modifier = modifier.fillMaxWidth(),
@@ -90,9 +96,13 @@ fun AntecedentesStepScreen(
         }
 
         Spacer(Modifier.height(10.dp))
-        DuocTextField(
+        AutocompleteTextField(
             value = establecimientoEducacional,
             onValueChange = onEstablecimientoChange,
+            suggestions = establecimientoSuggestions,
+            itemPrimaryText = { it.nombre },
+            itemSecondaryText = { "${it.comuna}${if (it.region.isNotBlank()) " • ${it.region}" else ""}" },
+            onSuggestionSelected = onSelectEstablecimientoSuggestion,
             label = "Establecimiento Educacional",
             placeholder = "Ej: Colegio Rubén Castro",
             isError = establecimientoError != null,
@@ -100,9 +110,12 @@ fun AntecedentesStepScreen(
         )
 
         Spacer(Modifier.height(10.dp))
-        DuocTextField(
+        AutocompleteTextField(
             value = comunaEstablecimiento,
             onValueChange = onComunaEstablecimientoChange,
+            suggestions = comunaEstablecimientoSuggestions,
+            itemPrimaryText = { it },
+            onSuggestionSelected = onSelectComunaEstablecimientoSuggestion,
             label = "Comuna del Colegio (Opcional)",
             placeholder = "Si es distinta a su comuna"
         )

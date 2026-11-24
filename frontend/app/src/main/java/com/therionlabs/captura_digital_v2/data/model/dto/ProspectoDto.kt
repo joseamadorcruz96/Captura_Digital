@@ -1,5 +1,6 @@
 package com.therionlabs.captura_digital_v2.data.model.dto
 
+import com.therionlabs.captura_digital_v2.data.model.EstadoCompletitud
 import com.therionlabs.captura_digital_v2.data.model.Evento
 import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.Jornada
@@ -43,7 +44,12 @@ data class ProspectoRequestDto(
     val sedeInteres: String,
     val nivelInteres: String,
     val perfilMotivacional: String,
-    val carreras: List<CarreraPreferenciaDto>
+    val carreras: List<CarreraPreferenciaDto>,
+    val estadoCompletitud: String? = null,
+    val firmaDigitalBase64: String? = null,
+    val firmaTimestampEpoch: Long? = null,
+    val latitud: Double? = null,
+    val longitud: Double? = null
 )
 
 data class ProspectoResponseDto(
@@ -70,7 +76,12 @@ data class ProspectoResponseDto(
     val perfilMotivacional: String,
     val carreras: List<CarreraPreferenciaDto>,
     val createdAt: String? = null,
-    val updatedAt: String? = null
+    val updatedAt: String? = null,
+    val estadoCompletitud: String? = null,
+    val firmaDigitalBase64: String? = null,
+    val firmaTimestampEpoch: Long? = null,
+    val latitud: Double? = null,
+    val longitud: Double? = null
 )
 
 data class BatchSyncRequestDto(
@@ -201,7 +212,12 @@ fun Prospecto.toDto(): ProspectoRequestDto {
         sedeInteres = sedeInteres,
         nivelInteres = nivelInteres.name,
         perfilMotivacional = perfilMotivacional.name,
-        carreras = carrerasList
+        carreras = carrerasList,
+        estadoCompletitud = estadoCompletitud.name,
+        firmaDigitalBase64 = firmaDigitalBase64,
+        firmaTimestampEpoch = firmaTimestampEpoch,
+        latitud = latitud,
+        longitud = longitud
     )
 }
 
@@ -229,7 +245,12 @@ fun ProspectoRequestDto.toDomain(syncStatus: SyncStatus = SyncStatus.SYNCED): Pr
         sedeInteres = sedeInteres,
         nivelInteres = nivelInteres,
         perfilMotivacional = perfilMotivacional,
-        carreras = carreras
+        carreras = carreras,
+        estadoCompletitud = estadoCompletitud,
+        firmaDigitalBase64 = firmaDigitalBase64,
+        firmaTimestampEpoch = firmaTimestampEpoch,
+        latitud = latitud,
+        longitud = longitud
     )
 
 fun ProspectoResponseDto.toDomain(syncStatus: SyncStatus = SyncStatus.SYNCED): Prospecto =
@@ -256,7 +277,12 @@ fun ProspectoResponseDto.toDomain(syncStatus: SyncStatus = SyncStatus.SYNCED): P
         sedeInteres = sedeInteres,
         nivelInteres = nivelInteres,
         perfilMotivacional = perfilMotivacional,
-        carreras = carreras
+        carreras = carreras,
+        estadoCompletitud = estadoCompletitud,
+        firmaDigitalBase64 = firmaDigitalBase64,
+        firmaTimestampEpoch = firmaTimestampEpoch,
+        latitud = latitud,
+        longitud = longitud
     )
 
 private fun mapFieldsToDomain(
@@ -282,7 +308,12 @@ private fun mapFieldsToDomain(
     sedeInteres: String,
     nivelInteres: String,
     perfilMotivacional: String,
-    carreras: List<CarreraPreferenciaDto>
+    carreras: List<CarreraPreferenciaDto>,
+    estadoCompletitud: String?,
+    firmaDigitalBase64: String?,
+    firmaTimestampEpoch: Long?,
+    latitud: Double?,
+    longitud: Double?
 ): Prospecto {
     val p1 = carreras.firstOrNull { it.prioridad == 1 }?.nombreCarrera ?: ""
     val p2 = carreras.firstOrNull { it.prioridad == 2 }?.nombreCarrera
@@ -317,6 +348,13 @@ private fun mapFieldsToDomain(
             .getOrDefault(PerfilMotivacional.INVERSION),
         carreraPrioridad1 = p1,
         carreraPrioridad2 = p2,
-        carreraPrioridad3 = p3
+        carreraPrioridad3 = p3,
+        estadoCompletitud = estadoCompletitud?.let { raw ->
+            runCatching { EstadoCompletitud.valueOf(raw) }.getOrNull()
+        } ?: EstadoCompletitud.COMPLETO,
+        firmaDigitalBase64 = firmaDigitalBase64,
+        firmaTimestampEpoch = firmaTimestampEpoch,
+        latitud = latitud,
+        longitud = longitud
     )
 }

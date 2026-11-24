@@ -11,9 +11,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.therionlabs.captura_digital_v2.CapturaDigitalApp
 import com.therionlabs.captura_digital_v2.data.local.DemoSeedGenerator
 import com.therionlabs.captura_digital_v2.data.model.AppMode
@@ -21,6 +23,7 @@ import com.therionlabs.captura_digital_v2.data.model.User
 import com.therionlabs.captura_digital_v2.data.model.UserRole
 import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
 import com.therionlabs.captura_digital_v2.data.repository.EventoRepository
+import com.therionlabs.captura_digital_v2.ui.capturas.CapturasRoute
 import com.therionlabs.captura_digital_v2.ui.components.OfflineStatusBanner
 import com.therionlabs.captura_digital_v2.ui.components.rememberIsOnline
 import com.therionlabs.captura_digital_v2.ui.dashboard.DashboardRoute
@@ -128,6 +131,7 @@ private fun AuthNavHost(
             composable("menu") {
                 InicioRoute(
                     onNewCapture = { navController.navigate("formulario") },
+                    onViewCapturas = { navController.navigate("capturas") },
                     onDashboard = { navController.navigate("dashboard") },
                     onManageEventos = {
                         if (sessionUser?.role == UserRole.ADMINISTRATIVO) {
@@ -159,10 +163,42 @@ private fun AuthNavHost(
                 )
             }
 
+            // Vista consolidada de Mis Capturas y Borradores
+            composable("capturas") {
+                CapturasRoute(
+                    onNewCapture = { navController.navigate("formulario") },
+                    onResumeBorrador = { borradorId ->
+                        navController.navigate("formulario?borradorId=$borradorId")
+                    },
+                    onEditProspecto = { prospectoId ->
+                        navController.navigate("formulario?prospectoId=$prospectoId")
+                    },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
             // Pantalla de Captura Modal Stepper del Cupón Duoc UC
-            composable("formulario") {
+            composable(
+                route = "formulario?borradorId={borradorId}&prospectoId={prospectoId}",
+                arguments = listOf(
+                    navArgument("borradorId") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("prospectoId") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                val borradorId = backStackEntry.arguments?.getString("borradorId")
+                val prospectoId = backStackEntry.arguments?.getString("prospectoId")
                 StepFormRoute(
                     eventoId = activeEventId,
+                    borradorId = borradorId,
+                    prospectoId = prospectoId,
                     onBack = { navController.popBackStack() }
                 )
             }

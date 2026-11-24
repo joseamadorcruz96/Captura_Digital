@@ -22,6 +22,8 @@ data class InicioUiState(
     val pendingSyncCount: Int = 0,
     val syncErrorCount: Int = 0,
     val totalCapturedToday: Int = 0,
+    val borradoresCount: Int = 0,
+    val totalCapturasCount: Int = 0,
     val isOnline: Boolean = true,
     val isSyncing: Boolean = false,
     val syncMessage: String? = null

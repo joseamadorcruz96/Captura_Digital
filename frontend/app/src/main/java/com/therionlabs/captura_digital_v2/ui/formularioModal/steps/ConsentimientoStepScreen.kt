@@ -22,17 +22,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.therionlabs.captura_digital_v2.ui.components.DuocCard
+import com.therionlabs.captura_digital_v2.ui.formularioModal.components.SignaturePad
 import com.therionlabs.captura_digital_v2.ui.theme.Captura_Digital_v2Theme
 
 /**
- * Paso 1: Consentimiento informado (Ley N° 19.628 / Ley N° 21.719).
+ * Paso 1: Consentimiento informado (Ley N° 19.628 / Ley N° 21.719) y firma digital táctil.
  */
 @Composable
 fun ConsentimientoStepScreen(
     consentimiento: Boolean,
     consentimientoError: String?,
     onConsentimientoChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    firmaDigitalBase64: String? = null,
+    firmaTimestampEpoch: Long? = null,
+    firmaError: String? = null,
+    onFirmaChange: (String?) -> Unit = {}
 ) {
     DuocCard(
         modifier = modifier.fillMaxWidth(),
@@ -85,6 +90,14 @@ fun ConsentimientoStepScreen(
                 modifier = Modifier.padding(start = 12.dp)
             )
         }
+
+        Spacer(Modifier.height(14.dp))
+        SignaturePad(
+            firmaBase64 = firmaDigitalBase64,
+            firmaTimestampEpoch = firmaTimestampEpoch,
+            onFirmaChange = onFirmaChange,
+            errorMessage = firmaError
+        )
     }
 }
 

@@ -61,3 +61,8 @@ enum class SyncStatus(val displayName: String) {
     SYNCED("Sincronizado"),
     SYNC_ERROR("Error de sincronización")
 }
+
+enum class EstadoCompletitud(val displayName: String) {
+    COMPLETO("Completo"),
+    EXPRESS("Express")
+}

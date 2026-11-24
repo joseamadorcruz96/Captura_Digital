@@ -6,10 +6,12 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.therionlabs.captura_digital_v2.data.local.dao.BorradorDao
 import com.therionlabs.captura_digital_v2.data.local.dao.EventoDao
 import com.therionlabs.captura_digital_v2.data.local.dao.ProspectoDao
 import com.therionlabs.captura_digital_v2.data.local.dao.TurnoEventoDao
 import com.therionlabs.captura_digital_v2.data.model.Evento
+import com.therionlabs.captura_digital_v2.data.model.FormularioBorrador
 import com.therionlabs.captura_digital_v2.data.model.Prospecto
 import com.therionlabs.captura_digital_v2.data.model.TurnoEvento
 import kotlinx.coroutines.CoroutineScope
@@ -18,12 +20,12 @@ import kotlinx.coroutines.launch
 
 /**
  * Base de datos principal Room SQLite para Captura Digital v2.
- * Administra 'prospectos', 'eventos' y 'turnos_evento', exporta el esquema para migraciones
- * verificables e incluye pre-población inicial de datos demo realistas.
+ * Administra 'prospectos', 'eventos', 'turnos_evento' y 'formulario_borradores', exporta el esquema
+ * para migraciones verificables e incluye pre-población inicial de datos demo realistas.
  */
 @Database(
-    entities = [Prospecto::class, Evento::class, TurnoEvento::class],
-    version = 4,
+    entities = [Prospecto::class, Evento::class, TurnoEvento::class, FormularioBorrador::class],
+    version = 5,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -32,6 +34,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun prospectoDao(): ProspectoDao
     abstract fun eventoDao(): EventoDao
     abstract fun turnoEventoDao(): TurnoEventoDao
+    abstract fun borradorDao(): BorradorDao
 
     companion object {
         @Volatile

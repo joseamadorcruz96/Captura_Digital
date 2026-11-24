@@ -1,5 +1,6 @@
 package com.therionlabs.captura_digital_v2
 
+import com.therionlabs.captura_digital_v2.data.model.FormularioBorrador
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
 import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
 import com.therionlabs.captura_digital_v2.util.FormularioValidator
@@ -70,5 +71,52 @@ class FormularioValidatorTest {
 
         assertTrue(FormularioValidator.validarPerfilMotivacional(null) is Resultado.Invalido)
         assertTrue(FormularioValidator.validarPerfilMotivacional(PerfilMotivacional.VOCACIONAL) is Resultado.Validado)
+    }
+
+    @Test
+    fun validarConsentimientoConFirma_exigeFirmaSoloCuandoFlagEstaActivo() {
+        assertTrue(FormularioValidator.validarConsentimientoConFirma(true, null, exigirFirma = false).isValid)
+        assertFalse(FormularioValidator.validarConsentimientoConFirma(true, null, exigirFirma = true).isValid)
+        assertTrue(FormularioValidator.validarConsentimientoConFirma(true, "base64-png", exigirFirma = true).isValid)
+    }
+
+    @Test
+    fun validarBorradorMinimo_rechazaVacioYAceptaUnCampo() {
+        val vacio = FormularioBorrador(captadorId = 2, consentimiento = true)
+        assertFalse(FormularioValidator.validarBorradorMinimo(vacio).isValid)
+
+        val conNombre = FormularioBorrador(captadorId = 2, nombres = "Camila")
+        assertTrue(FormularioValidator.validarBorradorMinimo(conNombre).isValid)
+    }
+
+    @Test
+    fun validarExpress_validaMinimosEsencialesSinExigirColegioNiComuna() {
+        val ok = FormularioValidator.validarExpress(
+            consentimiento = true,
+            firmaBase64 = null,
+            exigirFirma = false,
+            rut = "11.111.111-1",
+            nombres = "Camila",
+            apellidos = "Soto",
+            email = "camila@duoc.cl",
+            celular = "",
+            sedeInteres = "Viña del Mar",
+            carreraPrioridad1 = "Ingeniería en Informática"
+        )
+        assertTrue(ok.isEmpty())
+
+        val faltantes = FormularioValidator.validarExpress(
+            consentimiento = true,
+            firmaBase64 = null,
+            exigirFirma = false,
+            rut = "11.111.111-1",
+            nombres = "Camila",
+            apellidos = "Soto",
+            email = "",
+            celular = "",
+            sedeInteres = null,
+            carreraPrioridad1 = ""
+        )
+        assertTrue(faltantes.size >= 3)
     }
 }

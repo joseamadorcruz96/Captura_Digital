@@ -36,3 +36,4 @@ guia_estudio/
 .env
 .env.*
 !.env.example
+/ROADMAP.md

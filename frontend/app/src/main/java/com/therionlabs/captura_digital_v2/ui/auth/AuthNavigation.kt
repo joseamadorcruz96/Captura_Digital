@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -14,12 +15,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.therionlabs.captura_digital_v2.CapturaDigitalApp
+import com.therionlabs.captura_digital_v2.data.local.DemoSeedGenerator
+import com.therionlabs.captura_digital_v2.data.model.AppMode
+import com.therionlabs.captura_digital_v2.data.model.User
 import com.therionlabs.captura_digital_v2.data.model.UserRole
 import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
-import com.therionlabs.captura_digital_v2.data.repository.ProspectoRepository
+import com.therionlabs.captura_digital_v2.data.repository.EventoRepository
 import com.therionlabs.captura_digital_v2.ui.components.OfflineStatusBanner
 import com.therionlabs.captura_digital_v2.ui.components.rememberIsOnline
 import com.therionlabs.captura_digital_v2.ui.dashboard.DashboardRoute
+import com.therionlabs.captura_digital_v2.ui.eventos.EventosRoute
 import com.therionlabs.captura_digital_v2.ui.formularioModal.StepFormRoute
 import com.therionlabs.captura_digital_v2.ui.help.HelpScreen
 import com.therionlabs.captura_digital_v2.ui.inicio.InicioRoute
@@ -35,13 +40,19 @@ private fun destinationForRole(role: UserRole): String = when (role) {
 @Composable
 fun AuthNavigation(
     onLoginSuccess: () -> Unit,
-    authRepository: AuthRepository? = remember { CapturaDigitalApp.containerOrNull()?.authRepository }
+    authRepository: AuthRepository? = remember { CapturaDigitalApp.containerOrNull()?.authRepository },
+    eventoRepository: EventoRepository? = remember { CapturaDigitalApp.containerOrNull()?.eventoRepository }
 ) {
     val isOnline = rememberIsOnline()
 
     if (authRepository != null) {
         val isSessionLoaded by authRepository.isSessionLoaded.collectAsStateWithLifecycle()
         val sessionState by authRepository.sessionState.collectAsStateWithLifecycle()
+        val activeEvent by if (eventoRepository != null) {
+            eventoRepository.observeEventoActivo().collectAsStateWithLifecycle(initialValue = null)
+        } else {
+            remember { androidx.compose.runtime.mutableStateOf(null) }
+        }
 
         if (!isSessionLoaded) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -60,7 +71,9 @@ fun AuthNavigation(
             onLoginSuccess = onLoginSuccess,
             onKioscoLogout = { authRepository.logout() },
             sessionUser = sessionState.user,
-            sessionAppMode = sessionState.appMode
+            sessionAppMode = sessionState.appMode,
+            activeEventName = activeEvent?.nombre ?: DemoSeedGenerator.DEFAULT_EVENT_NAME,
+            activeEventId = activeEvent?.id ?: sessionState.activeEventId ?: DemoSeedGenerator.DEFAULT_EVENT_ID
         )
     } else {
         AuthNavHost(
@@ -69,7 +82,9 @@ fun AuthNavigation(
             onLoginSuccess = onLoginSuccess,
             onKioscoLogout = {},
             sessionUser = null,
-            sessionAppMode = com.therionlabs.captura_digital_v2.data.model.AppMode.LOCAL_DEMO
+            sessionAppMode = AppMode.LOCAL_DEMO,
+            activeEventName = DemoSeedGenerator.DEFAULT_EVENT_NAME,
+            activeEventId = DemoSeedGenerator.DEFAULT_EVENT_ID
         )
     }
 }
@@ -80,8 +95,10 @@ private fun AuthNavHost(
     isOnline: Boolean,
     onLoginSuccess: () -> Unit,
     onKioscoLogout: () -> Unit,
-    sessionUser: com.therionlabs.captura_digital_v2.data.model.User?,
-    sessionAppMode: com.therionlabs.captura_digital_v2.data.model.AppMode
+    sessionUser: User?,
+    sessionAppMode: AppMode,
+    activeEventName: String,
+    activeEventId: String
 ) {
     val navController = rememberNavController()
 
@@ -112,6 +129,11 @@ private fun AuthNavHost(
                 InicioRoute(
                     onNewCapture = { navController.navigate("formulario") },
                     onDashboard = { navController.navigate("dashboard") },
+                    onManageEventos = {
+                        if (sessionUser?.role == UserRole.ADMINISTRATIVO) {
+                            navController.navigate("eventos")
+                        }
+                    },
                     onHelp = { navController.navigate("help") },
                     onLogout = {
                         navController.navigate("login") {
@@ -125,7 +147,7 @@ private fun AuthNavHost(
             composable("kiosco") {
                 KioscoPlaceholderScreen(
                     user = sessionUser,
-                    eventName = ProspectoRepository.activeEventName,
+                    eventName = activeEventName,
                     appMode = sessionAppMode,
                     onOpenForm = { navController.navigate("formulario") },
                     onLogout = {
@@ -139,7 +161,10 @@ private fun AuthNavHost(
 
             // Pantalla de Captura Modal Stepper del Cupón Duoc UC
             composable("formulario") {
-                StepFormRoute(onBack = { navController.popBackStack() })
+                StepFormRoute(
+                    eventoId = activeEventId,
+                    onBack = { navController.popBackStack() }
+                )
             }
 
             composable("help") {
@@ -149,12 +174,27 @@ private fun AuthNavHost(
             composable("dashboard") {
                 DashboardRoute(
                     onBack = { navController.popBackStack() },
-                    onUsuarios = { navController.navigate("usuarios") }
+                    onUsuarios = { navController.navigate("usuarios") },
+                    onEventos = {
+                        if (sessionUser?.role == UserRole.ADMINISTRATIVO) {
+                            navController.navigate("eventos")
+                        }
+                    }
                 )
             }
 
             composable("usuarios") {
                 UsuariosRoute(onBack = { navController.popBackStack() })
+            }
+
+            composable("eventos") {
+                if (sessionUser?.role == UserRole.ADMINISTRATIVO) {
+                    EventosRoute(onBack = { navController.popBackStack() })
+                } else {
+                    LaunchedEffect(Unit) {
+                        navController.popBackStack()
+                    }
+                }
             }
         }
         OfflineStatusBanner(isOnline = isOnline)

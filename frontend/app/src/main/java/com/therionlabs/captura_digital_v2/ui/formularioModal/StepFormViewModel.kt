@@ -2,6 +2,7 @@ package com.therionlabs.captura_digital_v2.ui.formularioModal
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.therionlabs.captura_digital_v2.data.local.DemoSeedGenerator
 import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
@@ -9,6 +10,7 @@ import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
 import com.therionlabs.captura_digital_v2.data.model.Prospecto
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
+import com.therionlabs.captura_digital_v2.data.repository.IEventoRepository
 import com.therionlabs.captura_digital_v2.data.repository.IProspectoRepository
 import com.therionlabs.captura_digital_v2.data.repository.ProspectoRepository
 import com.therionlabs.captura_digital_v2.util.FormularioValidator
@@ -25,10 +27,11 @@ import kotlinx.coroutines.launch
  * incompletos y bloquea el guardado hasta validar las 6 fases.
  */
 class StepFormViewModel(
-    private val repository: IProspectoRepository
+    private val repository: IProspectoRepository,
+    private val eventoRepository: IEventoRepository? = null
 ) : ViewModel() {
 
-    constructor() : this(ProspectoRepository())
+    constructor() : this(ProspectoRepository(), null)
 
     private val _uiState = MutableStateFlow(StepFormUiState())
     val uiState: StateFlow<StepFormUiState> = _uiState.asStateFlow()
@@ -302,7 +305,7 @@ class StepFormViewModel(
 
     // --- Guardado con validación global de las 6 etapas ---
 
-    fun guardar(captadorId: Int, eventoId: String?) {
+    fun guardar(captadorId: Int, eventoId: String? = null) {
         val current = _uiState.value
 
         var validatedState = current
@@ -334,34 +337,6 @@ class StepFormViewModel(
         val nivel = validatedState.nivelInteres ?: return
         val perfil = validatedState.perfilMotivacional ?: return
 
-        val prospecto = Prospecto(
-            captadorId = captadorId,
-            eventoId = eventoId,
-            consentimientoDatos = true,
-            rut = RutUtils.formatRut(validatedState.rut),
-            nombres = validatedState.nombres.trim(),
-            apellidos = validatedState.apellidos.trim(),
-            genero = validatedState.genero,
-            fechaNacimiento = validatedState.fechaNacimiento.ifBlank { null },
-            comunaResidencia = validatedState.comunaResidencia.trim(),
-            celular = if (validatedState.celular.isNotBlank()) "+569${validatedState.celular}" else "",
-            email = validatedState.email.trim(),
-            situacionAcademica = validatedState.situacionAcademica,
-            situacionAcademicaOtro = validatedState.situacionAcademicaOtro.ifBlank { null },
-            establecimientoEducacional = validatedState.establecimientoEducacional.trim(),
-            comunaEstablecimiento = validatedState.comunaEstablecimiento.ifBlank {
-                validatedState.comunaResidencia.trim()
-            },
-            jornadaPreferencia = validatedState.jornada,
-            sedeInteres = sede,
-            nivelInteres = nivel,
-            perfilMotivacional = perfil,
-            carreraPrioridad1 = validatedState.carreraPrioridad1,
-            carreraPrioridad2 = validatedState.carreraPrioridad2.ifBlank { null },
-            carreraPrioridad3 = validatedState.carreraPrioridad3.ifBlank { null },
-            syncStatus = SyncStatus.PENDING_SYNC
-        )
-
         _uiState.value = validatedState.copy(
             stepStatuses = updatedStatuses,
             generalErrorMessage = null,
@@ -369,10 +344,42 @@ class StepFormViewModel(
         )
 
         viewModelScope.launch {
+            val resolvedEventoId = eventoId?.takeIf { it.isNotBlank() }
+                ?: eventoRepository?.getEventoActivoId()
+                ?: DemoSeedGenerator.DEFAULT_EVENT_ID
+
+            val prospecto = Prospecto(
+                captadorId = captadorId,
+                eventoId = resolvedEventoId,
+                consentimientoDatos = true,
+                rut = RutUtils.formatRut(validatedState.rut),
+                nombres = validatedState.nombres.trim(),
+                apellidos = validatedState.apellidos.trim(),
+                genero = validatedState.genero,
+                fechaNacimiento = validatedState.fechaNacimiento.ifBlank { null },
+                comunaResidencia = validatedState.comunaResidencia.trim(),
+                celular = if (validatedState.celular.isNotBlank()) "+569${validatedState.celular}" else "",
+                email = validatedState.email.trim(),
+                situacionAcademica = validatedState.situacionAcademica,
+                situacionAcademicaOtro = validatedState.situacionAcademicaOtro.ifBlank { null },
+                establecimientoEducacional = validatedState.establecimientoEducacional.trim(),
+                comunaEstablecimiento = validatedState.comunaEstablecimiento.ifBlank {
+                    validatedState.comunaResidencia.trim()
+                },
+                jornadaPreferencia = validatedState.jornada,
+                sedeInteres = sede,
+                nivelInteres = nivel,
+                perfilMotivacional = perfil,
+                carreraPrioridad1 = validatedState.carreraPrioridad1,
+                carreraPrioridad2 = validatedState.carreraPrioridad2.ifBlank { null },
+                carreraPrioridad3 = validatedState.carreraPrioridad3.ifBlank { null },
+                syncStatus = SyncStatus.PENDING_SYNC
+            )
+
             repository.guardarProspectoSuspend(prospecto)
             val syncResult = repository.sincronizarNuevosPendientes(
                 captadorId = captadorId,
-                eventoId = eventoId
+                eventoId = resolvedEventoId
             )
             val finalStatus = if (syncResult.exitosos > 0 && syncResult.fallidos == 0) {
                 SyncStatus.SYNCED

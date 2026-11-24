@@ -53,7 +53,8 @@ fun DashboardRoute(
         }
     },
     onBack: () -> Unit,
-    onUsuarios: () -> Unit
+    onUsuarios: () -> Unit,
+    onEventos: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -62,6 +63,7 @@ fun DashboardRoute(
         uiState = uiState,
         onBack = onBack,
         onUsuarios = onUsuarios,
+        onEventos = onEventos,
         onRotarInteres = viewModel::rotarNivelInteres,
         onEliminarProspecto = viewModel::eliminarProspecto,
         onShare = {
@@ -79,6 +81,7 @@ fun DashboardScreen(
     uiState: DashboardUiState,
     onBack: () -> Unit,
     onUsuarios: () -> Unit,
+    onEventos: () -> Unit = {},
     onRotarInteres: (Prospecto) -> Unit = {},
     onEliminarProspecto: (String) -> Unit = {},
     onShare: () -> Unit
@@ -147,6 +150,18 @@ fun DashboardScreen(
                     .height(48.dp)
             ) {
                 Text("Gestionar usuarios", fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = onEventos,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = DuocAzul),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(48.dp)
+            ) {
+                Text("Gestionar eventos", fontWeight = FontWeight.Bold)
             }
         }
 

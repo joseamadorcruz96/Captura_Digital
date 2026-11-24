@@ -1,5 +1,6 @@
 package com.therionlabs.captura_digital_v2.data.model.dto
 
+import com.therionlabs.captura_digital_v2.data.model.Evento
 import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
@@ -7,6 +8,8 @@ import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
 import com.therionlabs.captura_digital_v2.data.model.Prospecto
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
+import com.therionlabs.captura_digital_v2.data.model.TipoEvento
+import com.therionlabs.captura_digital_v2.util.EventoDateUtils
 
 /**
  * Data Transfer Objects (DTOs) para la comunicación con la API REST de Spring Boot.
@@ -91,8 +94,75 @@ data class EventoResponseDto(
     val comuna: String,
     val sedeResponsable: String,
     val fechaEvento: String?,
-    val activo: Boolean
+    val activo: Boolean,
+    val tipo: String? = null,
+    val ubicacion: String? = null,
+    val fechaInicioEpoch: Long? = null,
+    val fechaFinEpoch: Long? = null,
+    val metaProspectos: Int? = null,
+    val archivado: Boolean = false
 )
+
+fun EventoResponseDto.toDomain(ahoraEpochMs: Long = System.currentTimeMillis()): Evento {
+    val parsedTipo = tipo?.let { raw -> runCatching { TipoEvento.valueOf(raw) }.getOrNull() }
+        ?: when {
+            nombre.contains("colegio", ignoreCase = true) ||
+                nombre.contains("liceo", ignoreCase = true) ||
+                establecimiento.contains("colegio", ignoreCase = true) ||
+                establecimiento.contains("liceo", ignoreCase = true) -> TipoEvento.COLEGIO
+            nombre.contains("casa abierta", ignoreCase = true) -> TipoEvento.CASA_ABIERTA
+            else -> TipoEvento.FERIA
+        }
+
+    val resolvedUbicacion = ubicacion?.takeIf { it.isNotBlank() } ?: run {
+        when {
+            establecimiento.isNotBlank() && comuna.isNotBlank() &&
+                !establecimiento.contains(comuna, ignoreCase = true) -> "$establecimiento, $comuna"
+            establecimiento.isNotBlank() -> establecimiento
+            comuna.isNotBlank() -> comuna
+            else -> sedeResponsable
+        }
+    }
+
+    val inicio = fechaInicioEpoch
+        ?: fechaEvento?.let { EventoDateUtils.parseDate(it, endOfDay = false) }
+        ?: ahoraEpochMs
+    val fin = fechaFinEpoch
+        ?: fechaEvento?.let { EventoDateUtils.parseDate(it, endOfDay = true) }
+        ?: (inicio + 8 * 60 * 60 * 1000L)
+
+    return Evento(
+        id = id,
+        nombre = nombre,
+        tipo = parsedTipo,
+        sedeAsociada = sedeResponsable.ifBlank { comuna.ifBlank { "Por definir" } },
+        ubicacion = resolvedUbicacion,
+        fechaInicio = inicio,
+        fechaFin = fin,
+        metaProspectos = (metaProspectos ?: 30).coerceAtLeast(1),
+        activo = activo,
+        archivado = archivado
+    )
+}
+
+fun Evento.toDto(): EventoResponseDto {
+    val comunaExtraida = ubicacion.substringAfterLast(",", "").trim().ifBlank { sedeAsociada }
+    return EventoResponseDto(
+        id = id,
+        nombre = nombre,
+        establecimiento = ubicacion,
+        comuna = comunaExtraida,
+        sedeResponsable = sedeAsociada,
+        fechaEvento = EventoDateUtils.formatIsoDate(fechaInicio),
+        activo = activo,
+        tipo = tipo.name,
+        ubicacion = ubicacion,
+        fechaInicioEpoch = fechaInicio,
+        fechaFinEpoch = fechaFin,
+        metaProspectos = metaProspectos,
+        archivado = archivado
+    )
+}
 
 data class DashboardResumenDto(
     val totalProspectos: Long,

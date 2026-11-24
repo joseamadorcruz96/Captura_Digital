@@ -71,7 +71,8 @@ class ProspectoRepository(
     private val dao: ProspectoDao? = resolveDao(),
     private val api: ProspectoApi? = resolveApi(dao),
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO),
-    private val appModeProvider: () -> AppMode = { AppMode.REMOTE_GATEWAY }
+    private val appModeProvider: () -> AppMode = { AppMode.REMOTE_GATEWAY },
+    private val activeEventIdProvider: () -> String = { activeEventId }
 ) : IProspectoRepository {
 
     companion object {
@@ -359,9 +360,11 @@ class ProspectoRepository(
 
     override suspend fun obtenerEventoActivo(): EventoResponseDto? {
         if (appModeProvider() == AppMode.LOCAL_DEMO) {
+            val resolvedId = activeEventIdProvider()
+            val resolvedName = if (resolvedId == activeEventId) activeEventName else resolvedId
             return EventoResponseDto(
-                id = activeEventId,
-                nombre = activeEventName,
+                id = resolvedId,
+                nombre = resolvedName,
                 establecimiento = "Duoc UC Sede Viña del Mar",
                 comuna = "Viña del Mar",
                 sedeResponsable = "Viña del Mar",
@@ -414,7 +417,7 @@ class ProspectoRepository(
     }
 
     override suspend fun poblarDatosDemo(resetear: Boolean): Int {
-        val seed = DemoSeedGenerator.generarProspectosDemo(eventoId = activeEventId)
+        val seed = DemoSeedGenerator.generarProspectosDemo(eventoId = activeEventIdProvider())
         if (dao != null) {
             if (resetear) {
                 dao.deleteAll()

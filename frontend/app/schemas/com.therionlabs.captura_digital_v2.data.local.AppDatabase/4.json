@@ -1,0 +1,373 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 4,
+    "identityHash": "4ed09f0f3465e6c44a746e9fb673fe8e",
+    "entities": [
+      {
+        "tableName": "prospectos",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `captadorId` INTEGER NOT NULL, `eventoId` TEXT, `fechaCaptura` INTEGER NOT NULL, `syncStatus` TEXT NOT NULL, `consentimientoDatos` INTEGER NOT NULL, `rut` TEXT NOT NULL, `nombres` TEXT NOT NULL, `apellidos` TEXT NOT NULL, `genero` TEXT NOT NULL, `fechaNacimiento` TEXT, `comunaResidencia` TEXT NOT NULL, `celular` TEXT NOT NULL, `email` TEXT NOT NULL, `situacionAcademica` TEXT NOT NULL, `situacionAcademicaOtro` TEXT, `establecimientoEducacional` TEXT NOT NULL, `comunaEstablecimiento` TEXT NOT NULL, `jornadaPreferencia` TEXT NOT NULL, `sedeInteres` TEXT NOT NULL, `nivelInteres` TEXT NOT NULL, `perfilMotivacional` TEXT NOT NULL, `carreraPrioridad1` TEXT NOT NULL, `carreraPrioridad2` TEXT, `carreraPrioridad3` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "captadorId",
+            "columnName": "captadorId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "eventoId",
+            "columnName": "eventoId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fechaCaptura",
+            "columnName": "fechaCaptura",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncStatus",
+            "columnName": "syncStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "consentimientoDatos",
+            "columnName": "consentimientoDatos",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rut",
+            "columnName": "rut",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nombres",
+            "columnName": "nombres",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "apellidos",
+            "columnName": "apellidos",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "genero",
+            "columnName": "genero",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fechaNacimiento",
+            "columnName": "fechaNacimiento",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "comunaResidencia",
+            "columnName": "comunaResidencia",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "celular",
+            "columnName": "celular",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "situacionAcademica",
+            "columnName": "situacionAcademica",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "situacionAcademicaOtro",
+            "columnName": "situacionAcademicaOtro",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "establecimientoEducacional",
+            "columnName": "establecimientoEducacional",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "comunaEstablecimiento",
+            "columnName": "comunaEstablecimiento",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "jornadaPreferencia",
+            "columnName": "jornadaPreferencia",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sedeInteres",
+            "columnName": "sedeInteres",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nivelInteres",
+            "columnName": "nivelInteres",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "perfilMotivacional",
+            "columnName": "perfilMotivacional",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "carreraPrioridad1",
+            "columnName": "carreraPrioridad1",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "carreraPrioridad2",
+            "columnName": "carreraPrioridad2",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "carreraPrioridad3",
+            "columnName": "carreraPrioridad3",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_prospectos_rut",
+            "unique": true,
+            "columnNames": [
+              "rut"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_prospectos_rut` ON `${TABLE_NAME}` (`rut`)"
+          },
+          {
+            "name": "index_prospectos_captadorId",
+            "unique": false,
+            "columnNames": [
+              "captadorId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_prospectos_captadorId` ON `${TABLE_NAME}` (`captadorId`)"
+          },
+          {
+            "name": "index_prospectos_syncStatus",
+            "unique": false,
+            "columnNames": [
+              "syncStatus"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_prospectos_syncStatus` ON `${TABLE_NAME}` (`syncStatus`)"
+          }
+        ]
+      },
+      {
+        "tableName": "eventos",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `nombre` TEXT NOT NULL, `tipo` TEXT NOT NULL, `sedeAsociada` TEXT NOT NULL, `ubicacion` TEXT NOT NULL, `fechaInicio` INTEGER NOT NULL, `fechaFin` INTEGER NOT NULL, `metaProspectos` INTEGER NOT NULL, `activo` INTEGER NOT NULL, `archivado` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nombre",
+            "columnName": "nombre",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tipo",
+            "columnName": "tipo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sedeAsociada",
+            "columnName": "sedeAsociada",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ubicacion",
+            "columnName": "ubicacion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fechaInicio",
+            "columnName": "fechaInicio",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fechaFin",
+            "columnName": "fechaFin",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "metaProspectos",
+            "columnName": "metaProspectos",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "activo",
+            "columnName": "activo",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "archivado",
+            "columnName": "archivado",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_eventos_activo",
+            "unique": false,
+            "columnNames": [
+              "activo"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_eventos_activo` ON `${TABLE_NAME}` (`activo`)"
+          },
+          {
+            "name": "index_eventos_archivado",
+            "unique": false,
+            "columnNames": [
+              "archivado"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_eventos_archivado` ON `${TABLE_NAME}` (`archivado`)"
+          }
+        ]
+      },
+      {
+        "tableName": "turnos_evento",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `eventoId` TEXT NOT NULL, `captadorId` INTEGER NOT NULL, `inicioEpoch` INTEGER NOT NULL, `finEpoch` INTEGER, `metaTurno` INTEGER NOT NULL, `totalCapturados` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "eventoId",
+            "columnName": "eventoId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "captadorId",
+            "columnName": "captadorId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "inicioEpoch",
+            "columnName": "inicioEpoch",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "finEpoch",
+            "columnName": "finEpoch",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "metaTurno",
+            "columnName": "metaTurno",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalCapturados",
+            "columnName": "totalCapturados",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_turnos_evento_eventoId",
+            "unique": false,
+            "columnNames": [
+              "eventoId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_turnos_evento_eventoId` ON `${TABLE_NAME}` (`eventoId`)"
+          },
+          {
+            "name": "index_turnos_evento_captadorId",
+            "unique": false,
+            "columnNames": [
+              "captadorId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_turnos_evento_captadorId` ON `${TABLE_NAME}` (`captadorId`)"
+          },
+          {
+            "name": "index_turnos_evento_finEpoch",
+            "unique": false,
+            "columnNames": [
+              "finEpoch"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_turnos_evento_finEpoch` ON `${TABLE_NAME}` (`finEpoch`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4ed09f0f3465e6c44a746e9fb673fe8e')"
+    ]
+  }
+}

@@ -1,5 +1,7 @@
 package com.therionlabs.captura_digital_v2
 
+import com.therionlabs.captura_digital_v2.data.local.InMemorySessionStorage
+import com.therionlabs.captura_digital_v2.data.model.AppMode
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
 import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
@@ -8,14 +10,18 @@ import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
 import com.therionlabs.captura_digital_v2.data.remote.ConnectivityObserver
 import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
+import com.therionlabs.captura_digital_v2.data.repository.EventoRepository
 import com.therionlabs.captura_digital_v2.data.repository.IProspectoRepository
 import com.therionlabs.captura_digital_v2.data.repository.SyncResult
 import com.therionlabs.captura_digital_v2.ui.inicio.InicioViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -126,5 +132,80 @@ class InicioViewModelTest {
         assertTrue(viewModel.uiState.value.isOnline)
         assertEquals(0, viewModel.uiState.value.pendingSyncCount)
         assertEquals("Sincronización completada exitosamente.", viewModel.uiState.value.syncMessage)
+    }
+
+    @Test
+    fun seleccionarEventoYCheckInTurno_actualizanMetaProgresoYResumenCierre() = runTest {
+        var fakeTime = 10_000_000L
+        val storage = InMemorySessionStorage(defaultAppMode = AppMode.LOCAL_DEMO)
+        val eventoRepo = EventoRepository(
+            eventoDao = null,
+            turnoDao = null,
+            api = null,
+            sessionStorage = storage,
+            coroutineScope = CoroutineScope(Dispatchers.Unconfined),
+            nowProvider = { fakeTime }
+        )
+        val repo = FakeSyncRepo()
+        val viewModel = InicioViewModel(
+            authRepository = AuthRepository(FakeAuthApi(), sessionStorage = storage),
+            prospectoRepository = repo,
+            eventoRepository = eventoRepo,
+            nowProvider = { fakeTime }
+        )
+
+        viewModel.seleccionarEvento("EVT-COL-RUBEN-2026")
+        assertEquals("EVT-COL-RUBEN-2026", viewModel.uiState.value.activeEventId)
+        assertEquals("Charla Vocacional Colegio Rubén Castro", viewModel.uiState.value.activeEventName)
+
+        viewModel.iniciarTurno(metaPersonalizada = 10)
+        assertNotNull(viewModel.uiState.value.activeTurno)
+        assertEquals(10, viewModel.uiState.value.currentGoal)
+
+        // Emitimos 2 capturas dentro del turno en el evento activo
+        fakeTime = 10_120_000L
+        repo.emitNewPending(
+            Prospecto(
+                id = "t1", captadorId = 2, eventoId = "EVT-COL-RUBEN-2026",
+                fechaCaptura = 10_060_000L, rut = "22.222.222-2",
+                nombres = "Pedro", apellidos = "Soto", comunaResidencia = "Viña",
+                celular = "+56933333333", email = "pedro@test.cl",
+                situacionAcademica = SituacionAcademica.CUARTO_MEDIO,
+                establecimientoEducacional = "Colegio Rubén Castro", comunaEstablecimiento = "Viña",
+                jornadaPreferencia = Jornada.DIURNA, sedeInteres = "Viña del Mar",
+                nivelInteres = NivelInteres.ALTO, perfilMotivacional = PerfilMotivacional.VOCACIONAL,
+                carreraPrioridad1 = "Ingeniería en Informática", syncStatus = SyncStatus.PENDING_SYNC
+            )
+        )
+        repo.emitNewPending(
+            Prospecto(
+                id = "t2", captadorId = 2, eventoId = "EVT-COL-RUBEN-2026",
+                fechaCaptura = 10_090_000L, rut = "22.222.223-0",
+                nombres = "Carla", apellidos = "Mena", comunaResidencia = "Viña",
+                celular = "+56944444444", email = "carla@test.cl",
+                situacionAcademica = SituacionAcademica.CUARTO_MEDIO,
+                establecimientoEducacional = "Colegio Rubén Castro", comunaEstablecimiento = "Viña",
+                jornadaPreferencia = Jornada.DIURNA, sedeInteres = "Viña del Mar",
+                nivelInteres = NivelInteres.BAJO, perfilMotivacional = PerfilMotivacional.INVERSION,
+                carreraPrioridad1 = "Diseño Gráfico", syncStatus = SyncStatus.SYNCED
+            )
+        )
+
+        assertEquals(2, viewModel.uiState.value.turnoCapturedCount)
+        assertEquals(0.2f, viewModel.uiState.value.progressFraction, 0.001f)
+
+        viewModel.finalizarTurno()
+        assertNull(viewModel.uiState.value.activeTurno)
+
+        val resumen = viewModel.uiState.value.resumenCierreTurno
+        assertNotNull(resumen)
+        assertEquals(2, resumen!!.totalCapturados)
+        assertEquals(120_000L, resumen.duracionMs)
+        assertEquals(1, resumen.distribucionInteres[NivelInteres.ALTO])
+        assertEquals(1, resumen.distribucionInteres[NivelInteres.BAJO])
+        assertTrue(resumen.pendientesSync >= 1)
+
+        viewModel.cerrarResumenTurno()
+        assertNull(viewModel.uiState.value.resumenCierreTurno)
     }
 }

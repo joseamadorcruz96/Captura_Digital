@@ -1,6 +1,8 @@
 package com.therionlabs.captura_digital_v2
 
+import androidx.datastore.core.okio.OkioStorage
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.PreferencesSerializer
 import com.therionlabs.captura_digital_v2.data.local.DataStoreSessionStorage
 import com.therionlabs.captura_digital_v2.data.local.InMemorySessionStorage
 import com.therionlabs.captura_digital_v2.data.local.LocalUserDataSource
@@ -17,6 +19,8 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import okio.FileSystem
+import okio.Path.Companion.toPath
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -26,6 +30,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.io.File
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthRepositoryTest {
@@ -104,11 +109,15 @@ class AuthRepositoryTest {
     @Test
     fun dataStoreSession_persisteSesionYAppModeEntreReiniciosYSeLimpiaEnLogout() {
         runBlocking {
-        val prefsFile = tempFolder.newFile("auth_session_test.preferences_pb")
+        val prefsFile = File(tempFolder.newFolder(), "auth_session_test.preferences_pb")
         val scope1 = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val dataStore1 = PreferenceDataStoreFactory.create(
-            scope = scope1,
-            produceFile = { prefsFile }
+            storage = OkioStorage(
+                fileSystem = FileSystem.SYSTEM,
+                serializer = PreferencesSerializer,
+                producePath = { prefsFile.absolutePath.toPath() }
+            ),
+            scope = scope1
         )
         val storage1 = DataStoreSessionStorage(dataStore1, defaultAppMode = AppMode.LOCAL_DEMO, scope = scope1)
         storage1.awaitInitialLoad()
@@ -127,8 +136,12 @@ class AuthRepositoryTest {
         // Simula reinicio de la app abriendo un nuevo DataStore sobre el mismo archivo
         val scope2 = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val dataStore2 = PreferenceDataStoreFactory.create(
-            scope = scope2,
-            produceFile = { prefsFile }
+            storage = OkioStorage(
+                fileSystem = FileSystem.SYSTEM,
+                serializer = PreferencesSerializer,
+                producePath = { prefsFile.absolutePath.toPath() }
+            ),
+            scope = scope2
         )
         val storage2 = DataStoreSessionStorage(dataStore2, defaultAppMode = AppMode.REMOTE_GATEWAY, scope = scope2)
         storage2.awaitInitialLoad()

@@ -7,6 +7,7 @@ import com.therionlabs.captura_digital_v2.data.model.NivelInteres
 import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
+import com.therionlabs.captura_digital_v2.data.model.TipoEvento
 
 /**
  * Conversores de tipo para Room SQLite.
@@ -61,6 +62,14 @@ class Converters {
     @TypeConverter
     fun toSyncStatus(value: String?): SyncStatus? = value?.let {
         runCatching { SyncStatus.valueOf(it) }.getOrDefault(SyncStatus.PENDING_SYNC)
+    }
+
+    @TypeConverter
+    fun fromTipoEvento(value: TipoEvento?): String? = value?.name
+
+    @TypeConverter
+    fun toTipoEvento(value: String?): TipoEvento? = value?.let {
+        runCatching { TipoEvento.valueOf(it) }.getOrDefault(TipoEvento.FERIA)
     }
 
 }

@@ -45,7 +45,6 @@ import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
 import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
-import com.therionlabs.captura_digital_v2.data.repository.ProspectoRepository
 import com.therionlabs.captura_digital_v2.di.rememberAppViewModel
 import com.therionlabs.captura_digital_v2.ui.components.DuocButton
 import com.therionlabs.captura_digital_v2.ui.components.DuocHeader
@@ -62,11 +61,15 @@ import com.therionlabs.captura_digital_v2.ui.theme.Captura_Digital_v2Theme
 @Composable
 fun StepFormRoute(
     viewModel: StepFormViewModel = rememberAppViewModel { container ->
-        if (container != null) StepFormViewModel(container.prospectoRepository) else StepFormViewModel()
+        if (container != null) {
+            StepFormViewModel(container.prospectoRepository, container.eventoRepository)
+        } else {
+            StepFormViewModel()
+        }
     },
     captadorId: Int = CapturaDigitalApp.containerOrNull()?.authRepository?.getCurrentUser()?.id
         ?: AuthRepository().getCurrentUser().id,
-    eventoId: String? = ProspectoRepository.activeEventId,
+    eventoId: String? = null,
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

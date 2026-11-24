@@ -1,13 +1,18 @@
 package com.therionlabs.captura_digital_v2
 
+import com.therionlabs.captura_digital_v2.data.local.InMemorySessionStorage
+import com.therionlabs.captura_digital_v2.data.model.AppMode
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
 import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
 import com.therionlabs.captura_digital_v2.data.model.Prospecto
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
+import com.therionlabs.captura_digital_v2.data.repository.EventoRepository
 import com.therionlabs.captura_digital_v2.data.repository.IProspectoRepository
 import com.therionlabs.captura_digital_v2.data.repository.SyncResult
 import com.therionlabs.captura_digital_v2.ui.formularioModal.FormStep
 import com.therionlabs.captura_digital_v2.ui.formularioModal.StepFormViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -133,5 +138,39 @@ class StepFormViewModelTest {
         assertEquals(1, repo.saved.size)
         assertEquals("11.111.111-1", repo.saved.first().rut)
         assertEquals(1f, state.progress, 0.001f)
+    }
+
+    @Test
+    fun guardar_sinEventoExplicitoUsaEventoActivoPersistidoEnEventoRepository() = runTest {
+        val storage = InMemorySessionStorage(defaultAppMode = AppMode.LOCAL_DEMO)
+        val eventoRepo = EventoRepository(
+            eventoDao = null,
+            turnoDao = null,
+            api = null,
+            sessionStorage = storage,
+            coroutineScope = CoroutineScope(Dispatchers.Unconfined)
+        )
+        eventoRepo.seleccionarEventoActivo("EVT-COL-RUBEN-2026")
+
+        val repo = FakeProspectoRepository(syncOnlineOnSave = true)
+        val viewModel = StepFormViewModel(repo, eventoRepo)
+
+        viewModel.onConsentimientoChange(true)
+        viewModel.onRutChange("111111111")
+        viewModel.onNombresChange("Camila Andrea")
+        viewModel.onApellidosChange("Valenzuela Soto")
+        viewModel.onComunaResidenciaChange("Viña del Mar")
+        viewModel.onEmailChange("camila@duoc.cl")
+        viewModel.onEstablecimientoChange("Colegio Rubén Castro")
+        viewModel.onSedeChange("Viña del Mar")
+        viewModel.onNivelInteresChange(NivelInteres.ALTO)
+        viewModel.onPerfilMotivacionalChange(PerfilMotivacional.VOCACIONAL)
+        viewModel.onCarrera1Change("Ingeniería en Informática")
+
+        viewModel.guardar(captadorId = 2)
+
+        assertTrue(viewModel.uiState.value.saveSuccess)
+        assertEquals(1, repo.saved.size)
+        assertEquals("EVT-COL-RUBEN-2026", repo.saved.first().eventoId)
     }
 }

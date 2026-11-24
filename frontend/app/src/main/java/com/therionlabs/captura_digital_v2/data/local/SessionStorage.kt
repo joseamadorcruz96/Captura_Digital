@@ -32,7 +32,8 @@ private val Context.capturaSessionDataStore: DataStore<Preferences> by preferenc
 data class PersistedSession(
     val user: User? = null,
     val token: String? = null,
-    val appMode: AppMode = AppMode.LOCAL_DEMO
+    val appMode: AppMode = AppMode.LOCAL_DEMO,
+    val activeEventId: String? = null
 )
 
 /**
@@ -52,9 +53,13 @@ interface SessionStorage {
     val currentToken: String?
         get() = sessionState.value.token
 
+    val currentActiveEventId: String?
+        get() = sessionState.value.activeEventId
+
     suspend fun saveUserSession(user: User, token: String?)
     suspend fun clearUserSession()
     suspend fun setAppMode(mode: AppMode)
+    suspend fun setActiveEventId(eventId: String?)
 }
 
 /**
@@ -63,11 +68,17 @@ interface SessionStorage {
 class InMemorySessionStorage(
     defaultAppMode: AppMode = AppMode.LOCAL_DEMO,
     initialUser: User? = null,
-    initialToken: String? = null
+    initialToken: String? = null,
+    initialActiveEventId: String? = null
 ) : SessionStorage {
 
     private val _sessionState = MutableStateFlow(
-        PersistedSession(user = initialUser, token = initialToken, appMode = defaultAppMode)
+        PersistedSession(
+            user = initialUser,
+            token = initialToken,
+            appMode = defaultAppMode,
+            activeEventId = initialActiveEventId
+        )
     )
     override val sessionState: StateFlow<PersistedSession> = _sessionState.asStateFlow()
 
@@ -84,6 +95,10 @@ class InMemorySessionStorage(
 
     override suspend fun setAppMode(mode: AppMode) {
         _sessionState.value = _sessionState.value.copy(appMode = mode)
+    }
+
+    override suspend fun setActiveEventId(eventId: String?) {
+        _sessionState.value = _sessionState.value.copy(activeEventId = eventId)
     }
 }
 
@@ -165,6 +180,17 @@ class DataStoreSessionStorage(
         }
     }
 
+    override suspend fun setActiveEventId(eventId: String?) {
+        _sessionState.value = _sessionState.value.copy(activeEventId = eventId)
+        dataStore.edit { prefs ->
+            if (eventId.isNullOrBlank()) {
+                prefs.remove(KEY_ACTIVE_EVENT_ID)
+            } else {
+                prefs[KEY_ACTIVE_EVENT_ID] = eventId
+            }
+        }
+    }
+
     private fun Preferences.toPersistedSession(fallbackMode: AppMode): PersistedSession {
         val mode = this[KEY_APP_MODE]
             ?.let { raw -> runCatching { AppMode.valueOf(raw) }.getOrNull() }
@@ -184,7 +210,13 @@ class DataStoreSessionStorage(
         }
 
         val token = if (user != null) this[KEY_TOKEN] else null
-        return PersistedSession(user = user, token = token, appMode = mode)
+        val activeEventId = this[KEY_ACTIVE_EVENT_ID]
+        return PersistedSession(
+            user = user,
+            token = token,
+            appMode = mode,
+            activeEventId = activeEventId
+        )
     }
 
     companion object {
@@ -194,6 +226,7 @@ class DataStoreSessionStorage(
         private val KEY_USER_ROLE = stringPreferencesKey("session_user_role")
         private val KEY_TOKEN = stringPreferencesKey("session_token")
         private val KEY_APP_MODE = stringPreferencesKey("app_mode")
+        private val KEY_ACTIVE_EVENT_ID = stringPreferencesKey("active_event_id")
 
         fun create(
             context: Context,

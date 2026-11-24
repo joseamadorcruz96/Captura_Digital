@@ -1,5 +1,6 @@
 package com.therionlabs.captura_digital_v2.data.local
 
+import com.therionlabs.captura_digital_v2.data.model.Evento
 import com.therionlabs.captura_digital_v2.data.model.Genero
 import com.therionlabs.captura_digital_v2.data.model.Jornada
 import com.therionlabs.captura_digital_v2.data.model.NivelInteres
@@ -7,6 +8,7 @@ import com.therionlabs.captura_digital_v2.data.model.PerfilMotivacional
 import com.therionlabs.captura_digital_v2.data.model.Prospecto
 import com.therionlabs.captura_digital_v2.data.model.SituacionAcademica
 import com.therionlabs.captura_digital_v2.data.model.SyncStatus
+import com.therionlabs.captura_digital_v2.data.model.TipoEvento
 import com.therionlabs.captura_digital_v2.util.RutUtils
 
 /**
@@ -17,6 +19,76 @@ object DemoSeedGenerator {
 
     const val DEFAULT_EVENT_ID: String = "EVT-DUOC-2026"
     const val DEFAULT_EVENT_NAME: String = "Feria Vocacional Duoc UC 2026"
+
+    /**
+     * Genera eventos demo realistas (ferias, colegios, casa abierta, inactivos y archivados)
+     * para operar sin backend en LOCAL_DEMO y como seed inicial de Room v4+.
+     */
+    fun generarEventosDemo(ahoraEpochMs: Long = System.currentTimeMillis()): List<Evento> {
+        val unDiaMs = 24 * 60 * 60 * 1000L
+        return listOf(
+            Evento(
+                id = DEFAULT_EVENT_ID,
+                nombre = DEFAULT_EVENT_NAME,
+                tipo = TipoEvento.FERIA,
+                sedeAsociada = "Viña del Mar",
+                ubicacion = "Duoc UC Sede Viña del Mar, Álvarez 2366",
+                fechaInicio = ahoraEpochMs - unDiaMs,
+                fechaFin = ahoraEpochMs + 2 * unDiaMs,
+                metaProspectos = 40,
+                activo = true,
+                archivado = false
+            ),
+            Evento(
+                id = "EVT-COL-RUBEN-2026",
+                nombre = "Charla Vocacional Colegio Rubén Castro",
+                tipo = TipoEvento.COLEGIO,
+                sedeAsociada = "Viña del Mar",
+                ubicacion = "Colegio Rubén Castro, Viña del Mar",
+                fechaInicio = ahoraEpochMs,
+                fechaFin = ahoraEpochMs + unDiaMs,
+                metaProspectos = 25,
+                activo = true,
+                archivado = false
+            ),
+            Evento(
+                id = "EVT-CASA-VARAS-2026",
+                nombre = "Casa Abierta Sede Antonio Varas",
+                tipo = TipoEvento.CASA_ABIERTA,
+                sedeAsociada = "Antonio Varas (Providencia)",
+                ubicacion = "Antonio Varas 666, Providencia",
+                fechaInicio = ahoraEpochMs + unDiaMs,
+                fechaFin = ahoraEpochMs + 3 * unDiaMs,
+                metaProspectos = 60,
+                activo = true,
+                archivado = false
+            ),
+            Evento(
+                id = "EVT-EXPO-VALPO-2026",
+                nombre = "Expo Educación Superior Valparaíso",
+                tipo = TipoEvento.FERIA,
+                sedeAsociada = "Valparaíso",
+                ubicacion = "Terminal de Pasajeros Valparaíso",
+                fechaInicio = ahoraEpochMs + 5 * unDiaMs,
+                fechaFin = ahoraEpochMs + 6 * unDiaMs,
+                metaProspectos = 50,
+                activo = false,
+                archivado = false
+            ),
+            Evento(
+                id = "EVT-LICEO-BARRA-2025",
+                nombre = "Feria Liceo Eduardo de la Barra 2025",
+                tipo = TipoEvento.COLEGIO,
+                sedeAsociada = "Valparaíso",
+                ubicacion = "Liceo Eduardo de la Barra, Valparaíso",
+                fechaInicio = ahoraEpochMs - 90 * unDiaMs,
+                fechaFin = ahoraEpochMs - 89 * unDiaMs,
+                metaProspectos = 20,
+                activo = false,
+                archivado = true
+            )
+        )
+    }
 
     /**
      * Genera un RUT chileno formateado con dígito verificador válido Módulo 11 a partir de su cuerpo numérico.

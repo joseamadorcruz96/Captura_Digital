@@ -3,6 +3,7 @@ package com.therionlabs.captura_digital_v2.di
 import android.content.Context
 import com.therionlabs.captura_digital_v2.data.local.AppDatabase
 import com.therionlabs.captura_digital_v2.data.local.DataStoreSessionStorage
+import com.therionlabs.captura_digital_v2.data.local.DemoSeedGenerator
 import com.therionlabs.captura_digital_v2.data.local.LocalUserDataSource
 import com.therionlabs.captura_digital_v2.data.local.SessionStorage
 import com.therionlabs.captura_digital_v2.data.model.AppMode
@@ -11,6 +12,7 @@ import com.therionlabs.captura_digital_v2.data.remote.IndicadoresApi
 import com.therionlabs.captura_digital_v2.data.remote.NetworkMonitor
 import com.therionlabs.captura_digital_v2.data.remote.RetrofitClient
 import com.therionlabs.captura_digital_v2.data.repository.AuthRepository
+import com.therionlabs.captura_digital_v2.data.repository.EventoRepository
 import com.therionlabs.captura_digital_v2.data.repository.ProspectoRepository
 import com.therionlabs.captura_digital_v2.data.repository.UsuarioRepository
 
@@ -23,6 +25,7 @@ interface AppContainer {
     val authRepository: AuthRepository
     val usuarioRepository: UsuarioRepository
     val prospectoRepository: ProspectoRepository
+    val eventoRepository: EventoRepository
     val connectivityObserver: ConnectivityObserver
     val indicadoresApi: IndicadoresApi
 }
@@ -63,6 +66,19 @@ class DefaultAppContainer(
         ProspectoRepository(
             dao = database.prospectoDao(),
             api = RetrofitClient.prospectoApi,
+            appModeProvider = { sessionStorage.currentAppMode },
+            activeEventIdProvider = {
+                sessionStorage.currentActiveEventId ?: DemoSeedGenerator.DEFAULT_EVENT_ID
+            }
+        )
+    }
+
+    override val eventoRepository: EventoRepository by lazy {
+        EventoRepository(
+            eventoDao = database.eventoDao(),
+            turnoDao = database.turnoEventoDao(),
+            api = RetrofitClient.prospectoApi,
+            sessionStorage = sessionStorage,
             appModeProvider = { sessionStorage.currentAppMode }
         )
     }
